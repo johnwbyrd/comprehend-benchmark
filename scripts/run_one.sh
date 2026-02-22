@@ -13,7 +13,7 @@
 #
 # Prerequisites:
 #   - claude CLI on PATH with ANTHROPIC_API_KEY set
-#   - jq installed
+#   - python3 on PATH
 #   - git installed
 #
 # The script:
@@ -34,13 +34,17 @@ REPO_DIR="$2"
 PROMPT_FILE="$3"
 OUTPUT_JSON="$4"
 
-# --- Parse config ---
-CONFIG_NAME=$(jq -r '.name' "$CONFIG_JSON")
-ALLOWED_TOOLS=$(jq -r '.allowed_tools' "$CONFIG_JSON")
-MAX_TURNS=$(jq -r '.max_turns' "$CONFIG_JSON")
-MODEL=$(jq -r '.model' "$CONFIG_JSON")
-APPEND_PROMPT=$(jq -r '.append_system_prompt' "$CONFIG_JSON")
-SKILLS_DIR=$(jq -r '.skills_dir // empty' "$CONFIG_JSON")
+# --- Parse config with Python (no jq dependency) ---
+read_config() {
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get(sys.argv[2],'') or '')" "$CONFIG_JSON" "$1"
+}
+
+CONFIG_NAME=$(read_config name)
+ALLOWED_TOOLS=$(read_config allowed_tools)
+MAX_TURNS=$(read_config max_turns)
+MODEL=$(read_config model)
+APPEND_PROMPT=$(read_config append_system_prompt)
+SKILLS_DIR=$(read_config skills_dir)
 
 echo "=== Running task ==="
 echo "Config: $CONFIG_NAME"
