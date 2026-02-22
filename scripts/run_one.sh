@@ -11,6 +11,11 @@
 #   prompt_file  - Path to a file containing the task prompt
 #   output_json  - Path to write the combined result JSON
 #
+# Prerequisites:
+#   - claude CLI on PATH with ANTHROPIC_API_KEY set
+#   - jq installed
+#   - git installed
+#
 # The script:
 #   1. Installs/removes the comprehend skill based on config
 #   2. Runs Claude Code headless with the task prompt
@@ -30,7 +35,6 @@ PROMPT_FILE="$3"
 OUTPUT_JSON="$4"
 
 # --- Parse config ---
-# TODO: Install jq or use python for JSON parsing if jq is not available
 CONFIG_NAME=$(jq -r '.name' "$CONFIG_JSON")
 ALLOWED_TOOLS=$(jq -r '.allowed_tools' "$CONFIG_JSON")
 MAX_TURNS=$(jq -r '.max_turns' "$CONFIG_JSON")
@@ -48,8 +52,12 @@ CLAUDE_DIR="$REPO_DIR/.claude"
 if [ -n "$SKILLS_DIR" ]; then
     echo "Installing comprehend skill..."
     mkdir -p "$CLAUDE_DIR/skills"
-    # TODO: Adjust this path to where comprehend is installed on your system
     COMPREHEND_SRC="${COMPREHEND_SRC:-$HOME/git/comprehend/skills/comprehend}"
+    if [ ! -d "$COMPREHEND_SRC" ]; then
+        echo "ERROR: comprehend skill not found at $COMPREHEND_SRC"
+        echo "       Set COMPREHEND_SRC to the path of your comprehend skill directory"
+        exit 1
+    fi
     cp -r "$COMPREHEND_SRC" "$CLAUDE_DIR/skills/"
 else
     echo "Baseline config: no skills installed"
@@ -62,50 +70,65 @@ PROMPT=$(cat "$PROMPT_FILE")
 # --- Run Claude Code ---
 START_TIME=$(date +%s)
 
+CLAUDE_OUTPUT_FILE=$(mktemp)
+GIT_DIFF_FILE=$(mktemp)
+trap 'rm -f "$CLAUDE_OUTPUT_FILE" "$GIT_DIFF_FILE"' EXIT
+
 cd "$REPO_DIR"
 
-# TODO: Ensure 'claude' is on your PATH and ANTHROPIC_API_KEY is set
-CLAUDE_OUTPUT=$(claude -p "$PROMPT" \
+claude -p "$PROMPT" \
     --output-format json \
     --allowedTools "$ALLOWED_TOOLS" \
     --max-turns "$MAX_TURNS" \
     --model "$MODEL" \
     --append-system-prompt "$APPEND_PROMPT" \
-    2>/dev/null) || true
+    > "$CLAUDE_OUTPUT_FILE" 2>/dev/null || true
 
 END_TIME=$(date +%s)
 WALL_TIME=$((END_TIME - START_TIME))
 
 # --- Capture git diff ---
-GIT_DIFF=$(git diff 2>/dev/null || echo "")
+git diff > "$GIT_DIFF_FILE" 2>/dev/null || true
 
-# --- Build result JSON ---
-# TODO: Extract token counts from CLAUDE_OUTPUT (field names may vary by CLI version)
+# --- Build result JSON safely via Python reading from temp files ---
 mkdir -p "$(dirname "$OUTPUT_JSON")"
 
-python3 -c "
-import json, sys
+python3 - "$CONFIG_NAME" "$REPO_DIR" "$WALL_TIME" \
+    "$CLAUDE_OUTPUT_FILE" "$GIT_DIFF_FILE" "$OUTPUT_JSON" <<'PYEOF'
+import json
+import sys
 
-claude_output = '''$CLAUDE_OUTPUT'''
+config_name = sys.argv[1]
+repo_dir = sys.argv[2]
+wall_time = int(sys.argv[3])
+claude_output_path = sys.argv[4]
+git_diff_path = sys.argv[5]
+output_path = sys.argv[6]
+
+with open(claude_output_path) as f:
+    raw = f.read().strip()
 try:
-    claude_data = json.loads(claude_output) if claude_output.strip() else {}
+    claude_data = json.loads(raw) if raw else {}
 except json.JSONDecodeError:
-    claude_data = {'raw_output': claude_output}
+    claude_data = {"raw_output": raw}
+
+with open(git_diff_path) as f:
+    git_diff = f.read()
 
 result = {
-    'config': '$CONFIG_NAME',
-    'repo_dir': '$REPO_DIR',
-    'wall_time_seconds': $WALL_TIME,
-    'git_diff': '''$(echo "$GIT_DIFF" | python3 -c "import sys; print(sys.stdin.read().replace('\\\\','\\\\\\\\').replace(\"'''\",\"''\" + \"'\"))" 2>/dev/null || echo "")''',
-    'claude_output': claude_data,
-    'session_id': claude_data.get('session_id', ''),
-    'result_text': claude_data.get('result', ''),
-    'total_cost_usd': claude_data.get('cost_usd', 0),
-    'total_tokens': claude_data.get('num_turns', 0),  # TODO: map to actual token field
+    "config": config_name,
+    "repo_dir": repo_dir,
+    "wall_time_seconds": wall_time,
+    "git_diff": git_diff,
+    "claude_output": claude_data,
+    "session_id": claude_data.get("session_id", ""),
+    "result_text": claude_data.get("result", ""),
+    "total_cost_usd": claude_data.get("cost_usd", 0),
+    "num_turns": claude_data.get("num_turns", 0),
 }
 
-with open('$OUTPUT_JSON', 'w') as f:
+with open(output_path, "w") as f:
     json.dump(result, f, indent=2)
 
-print(f'Done: {result[\"wall_time_seconds\"]}s, saved to $OUTPUT_JSON')
-"
+print(f"Done: {wall_time}s, saved to {output_path}")
+PYEOF

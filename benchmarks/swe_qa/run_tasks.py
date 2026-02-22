@@ -3,9 +3,15 @@
 Usage:
     python run_tasks.py --config ../../configs/baseline.json
     python run_tasks.py --config ../../configs/comprehend.json
+    python run_tasks.py --config ../../configs/comprehend.json --repo django
 
 SWE-QA tests code comprehension, not editing. Each task asks a question
 about a repository and expects a factual answer.
+
+Dataset: swe-qa/SWE-QA-Benchmark on HuggingFace
+  - 720 question-answer pairs across 15 repos (48 per repo)
+  - Fields per row: question, answer
+  - Repo identity comes from the split name (django, flask, pytest, etc.)
 
 This script:
 1. Loads the SWE-QA dataset
@@ -21,38 +27,76 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from datasets import load_dataset
+
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 RUN_ONE = PROJECT_ROOT / "scripts" / "run_one.sh"
 
+# Maps SWE-QA split names to GitHub repo URLs for checkout
+REPO_MAP = {
+    "astropy": "astropy/astropy",
+    "django": "django/django",
+    "flask": "pallets/flask",
+    "matplotlib": "matplotlib/matplotlib",
+    "pylint": "pylint-dev/pylint",
+    "pytest": "pytest-dev/pytest",
+    "requests": "psf/requests",
+    "scikit_learn": "scikit-learn/scikit-learn",
+    "sphinx": "sphinx-doc/sphinx",
+    "sqlfluff": "sqlfluff/sqlfluff",
+    "sympy": "sympy/sympy",
+    "xarray": "pydata/xarray",
+    "conan": "conan-io/conan",
+    "streamlink": "streamlink/streamlink",
+    "reflex": "reflex-dev/reflex",
+}
 
-def load_tasks():
-    """Load SWE-QA tasks.
 
-    TODO: Replace with actual dataset loading once the dataset is available.
-    The SWE-QA paper (arxiv.org/abs/2509.14635) describes 576 Q&A pairs.
-    Check the paper's GitHub repo for download instructions.
+def load_tasks(repo_filter: str | None = None):
+    """Load SWE-QA tasks from HuggingFace.
+
+    Dataset: swe-qa/SWE-QA-Benchmark
+    Each split is a repo name with 48 question-answer pairs.
+    The 'default' split contains all 720.
     """
-    # from datasets import load_dataset
-    # ds = load_dataset("swe-qa/SWE-QA", split="test")
-    # return list(ds)
+    if repo_filter:
+        ds = load_dataset("swe-qa/SWE-QA-Benchmark", split=repo_filter)
+        tasks = []
+        for i, row in enumerate(ds):
+            tasks.append({
+                "id": f"{repo_filter}_{i:03d}",
+                "repo": REPO_MAP.get(repo_filter, repo_filter),
+                "repo_split": repo_filter,
+                "question": row["question"],
+                "answer": row["answer"],
+            })
+        return tasks
 
-    print("TODO: Load SWE-QA dataset")
-    print("      Check https://arxiv.org/abs/2509.14635 for dataset access")
-    return []
+    # Load all repos
+    tasks = []
+    for split_name, github_repo in REPO_MAP.items():
+        try:
+            ds = load_dataset("swe-qa/SWE-QA-Benchmark", split=split_name)
+        except ValueError:
+            continue
+        for i, row in enumerate(ds):
+            tasks.append({
+                "id": f"{split_name}_{i:03d}",
+                "repo": github_repo,
+                "repo_split": split_name,
+                "question": row["question"],
+                "answer": row["answer"],
+            })
+    return tasks
 
 
 def evaluate_answer(predicted: str, reference: str) -> dict:
     """Evaluate a predicted answer against the reference.
 
-    TODO: Implement LLM-as-judge evaluation. The basic approach:
-    1. Send both answers to Claude with a scoring prompt
-    2. Ask it to rate correctness (1-5) and completeness (1-5)
-    3. Return structured scores
-
-    For now, returns a placeholder.
+    Returns word overlap as a baseline metric. LLM-as-judge scoring
+    can be added later for correctness and completeness (1-5 scale).
     """
-    # Simple heuristic: check if key terms from reference appear in prediction
     ref_words = set(reference.lower().split())
     pred_words = set(predicted.lower().split())
     overlap = len(ref_words & pred_words) / max(len(ref_words), 1)
@@ -66,18 +110,23 @@ def evaluate_answer(predicted: str, reference: str) -> dict:
 
 def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) -> dict:
     """Run a single SWE-QA task and return the result."""
-    task_id = task.get("id", "unknown")
-    question = task.get("question", "")
-    reference = task.get("answer", "")
-    repo = task.get("repo", "")
+    task_id = task["id"]
+    question = task["question"]
+    reference = task["answer"]
+    repo = task["repo"]
 
     print(f"\nTask: {task_id}")
     print(f"Repo: {repo}")
     print(f"Q:    {question[:80]}...")
 
-    # TODO: Check out repo at the correct commit
-    # repo_dir = checkout_repo(task, workdir)
-    repo_dir = workdir  # placeholder
+    # Clone the repo if needed (SWE-QA doesn't specify commits, use default branch)
+    repo_dir = workdir / repo.replace("/", "__")
+    if not repo_dir.exists():
+        subprocess.run(
+            ["git", "clone", "--depth", "1", f"https://github.com/{repo}.git", str(repo_dir)],
+            check=True,
+            capture_output=True,
+        )
 
     # Write question as prompt
     prompt_file = workdir / f"{task_id}_prompt.txt"
@@ -111,6 +160,7 @@ def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) ->
 def main():
     parser = argparse.ArgumentParser(description="Run SWE-QA tasks")
     parser.add_argument("--config", required=True, help="Path to config JSON")
+    parser.add_argument("--repo", default=None, help="Run only tasks for this repo split name")
     parser.add_argument("--workdir", default=None, help="Working directory")
     parser.add_argument("--results-dir", default=None, help="Results directory")
     args = parser.parse_args()
@@ -125,8 +175,9 @@ def main():
     results_dir = Path(args.results_dir) if args.results_dir else default_results
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    tasks = load_tasks()
+    tasks = load_tasks(repo_filter=args.repo)
     if not tasks:
+        print("No tasks loaded.")
         return
 
     print(f"Config: {config_name}, Tasks: {len(tasks)}")

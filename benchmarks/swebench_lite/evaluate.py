@@ -1,15 +1,16 @@
 """Evaluate SWE-bench predictions using the official harness.
 
 Usage:
-    python evaluate.py results/baseline/predictions.jsonl
-    python evaluate.py results/comprehend/predictions.jsonl --dataset SWE-bench_Lite
+    uv run bench-swebench-eval results/swebench_lite/baseline/predictions.jsonl
+    uv run bench-swebench-eval results/swebench_lite/comprehend/predictions.jsonl
 
 Requires:
-    pip install swebench
+    uv sync --extra swebench
     Docker must be installed and running.
 """
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,15 +31,30 @@ def main():
         print(f"Error: {predictions_path} not found", file=sys.stderr)
         sys.exit(1)
 
+    # Check Docker is running
+    try:
+        subprocess.run(
+            ["docker", "info"], check=True, capture_output=True
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: Docker is not running or not installed.", file=sys.stderr)
+        print("SWE-bench evaluation requires Docker.", file=sys.stderr)
+        sys.exit(1)
+
+    # Check swebench is installed
+    try:
+        import swebench  # noqa: F401
+    except ImportError:
+        print("Error: swebench not installed.", file=sys.stderr)
+        print("Run: uv sync --extra swebench", file=sys.stderr)
+        sys.exit(1)
+
     run_id = args.run_id or predictions_path.stem
 
     print(f"Evaluating: {predictions_path}")
     print(f"Dataset:    {args.dataset}")
     print(f"Workers:    {args.max_workers}")
     print(f"Run ID:     {run_id}")
-
-    # TODO: Verify Docker is running
-    # subprocess.run(["docker", "info"], check=True, capture_output=True)
 
     cmd = [
         sys.executable, "-m", "swebench.harness.run_evaluation",
@@ -49,12 +65,7 @@ def main():
     ]
 
     print(f"\nRunning: {' '.join(cmd)}\n")
-
-    # TODO: Uncomment to actually run evaluation
-    # subprocess.run(cmd, check=True)
-
-    print("TODO: Uncomment subprocess.run() call above to run evaluation")
-    print("      Requires: pip install swebench && Docker running")
+    subprocess.run(cmd, check=True)
 
 
 if __name__ == "__main__":

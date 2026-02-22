@@ -19,8 +19,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-# TODO: Uncomment when datasets is installed
-# from datasets import load_dataset
+from datasets import load_dataset
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
@@ -29,27 +28,22 @@ SAMPLE_TASKS = SCRIPT_DIR / "sample_tasks.json"
 
 
 def load_tasks(use_all: bool, instance_id: str | None = None):
-    """Load SWE-bench Lite tasks.
+    """Load SWE-bench Lite tasks from HuggingFace.
 
-    TODO: Uncomment the datasets loading and remove the placeholder.
+    Dataset: princeton-nlp/SWE-bench_Lite (test split, 300 tasks)
+    Fields: instance_id, repo, base_commit, problem_statement, patch, test_patch, ...
     """
-    # dataset = load_dataset("princeton-nlp/SWE-bench_Lite", split="test")
-    #
-    # if instance_id:
-    #     return [t for t in dataset if t["instance_id"] == instance_id]
-    #
-    # if not use_all:
-    #     with open(SAMPLE_TASKS) as f:
-    #         sample_ids = set(json.load(f))
-    #     return [t for t in dataset if t["instance_id"] in sample_ids]
-    #
-    # return list(dataset)
+    dataset = load_dataset("princeton-nlp/SWE-bench_Lite", split="test")
 
-    # Placeholder: return empty list until datasets is configured
-    print("TODO: Install 'datasets' package and uncomment load_dataset call")
-    print("      pip install datasets")
-    print("      # or: uv add datasets")
-    return []
+    if instance_id:
+        return [t for t in dataset if t["instance_id"] == instance_id]
+
+    if not use_all:
+        with open(SAMPLE_TASKS) as f:
+            sample_ids = set(json.load(f))
+        return [t for t in dataset if t["instance_id"] in sample_ids]
+
+    return list(dataset)
 
 
 def checkout_repo(task: dict, workdir: Path) -> Path:
