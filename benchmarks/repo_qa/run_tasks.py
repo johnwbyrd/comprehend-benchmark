@@ -112,7 +112,7 @@ def write_repo_files(repo_content: dict, repo_dir: Path):
     for file_path, content in repo_content.items():
         out_path = repo_dir / file_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(content, errors="replace")
+        out_path.write_text(content, encoding="utf-8", errors="replace")
 
 
 def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) -> dict:
@@ -150,7 +150,8 @@ def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) ->
     prompt_file.write_text(
         f"Find the function in this codebase that matches the following description:\n\n"
         f"{description}\n\n"
-        f"Return the exact function name and the file path where it is defined."
+        f"Return the exact function name and the file path where it is defined.",
+        encoding="utf-8",
     )
 
     # Run Claude Code

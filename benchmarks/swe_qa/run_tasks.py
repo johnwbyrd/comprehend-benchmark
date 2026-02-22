@@ -132,7 +132,8 @@ def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) ->
     prompt_file = workdir / f"{task_id}_prompt.txt"
     prompt_file.write_text(
         f"Answer this question about the codebase:\n\n{question}\n\n"
-        f"Be specific and reference exact file paths and function names."
+        f"Be specific and reference exact file paths and function names.",
+        encoding="utf-8",
     )
 
     # Run Claude Code

@@ -90,7 +90,7 @@ def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) ->
 
     # Write prompt to temp file
     prompt_file = workdir / f"{instance_id}_prompt.txt"
-    prompt_file.write_text(task["problem_statement"])
+    prompt_file.write_text(task["problem_statement"], encoding="utf-8")
 
     # Run Claude Code
     output_json = results_dir / f"{instance_id}.json"
