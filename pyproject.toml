@@ -4,13 +4,35 @@ version = "0.1.0"
 description = "Benchmark the comprehend skill against baseline Claude Code on code understanding and editing tasks"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "John Byrd", email = "johnwbyrd@gmail.com" }]
 dependencies = [
     "datasets",
     "huggingface-hub",
 ]
 
+[project.urls]
+Repository = "https://github.com/johnwbyrd/comprehend-benchmark"
+Issues = "https://github.com/johnwbyrd/comprehend-benchmark/issues"
+
 [project.optional-dependencies]
 swebench = ["swebench"]
+stats = ["scipy"]
+
+[project.scripts]
+bench-swebench = "benchmarks.swebench_lite.run_tasks:main"
+bench-swebench-eval = "benchmarks.swebench_lite.evaluate:main"
+bench-swe-qa = "benchmarks.swe_qa.run_tasks:main"
+bench-repo-qa = "benchmarks.repo_qa.run_tasks:main"
+bench-compare = "analysis.compare:main"
+bench-report = "analysis.report:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["benchmarks", "analysis"]
 
 [dependency-groups]
 dev = [
