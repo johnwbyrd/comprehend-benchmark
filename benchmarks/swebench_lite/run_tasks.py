@@ -15,10 +15,8 @@ This script:
 
 import argparse
 import json
-import os
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 # TODO: Uncomment when datasets is installed
@@ -135,7 +133,9 @@ def write_predictions(results: list[dict], output_path: Path, config_name: str):
 def main():
     parser = argparse.ArgumentParser(description="Run SWE-bench Lite tasks")
     parser.add_argument("--config", required=True, help="Path to config JSON")
-    parser.add_argument("--all", action="store_true", help="Run all 300 tasks (default: curated subset)")
+    parser.add_argument(
+        "--all", action="store_true", help="Run all 300 tasks (default: curated subset)"
+    )
     parser.add_argument("--instance-id", help="Run a single specific task")
     parser.add_argument("--workdir", default=None, help="Working directory for repo checkouts")
     parser.add_argument("--results-dir", default=None, help="Directory for result JSON files")
@@ -147,7 +147,8 @@ def main():
     config_name = config["name"]
 
     workdir = Path(args.workdir) if args.workdir else Path(tempfile.mkdtemp(prefix="swebench_"))
-    results_dir = Path(args.results_dir) if args.results_dir else PROJECT_ROOT / "results" / "swebench_lite" / config_name
+    default_results = PROJECT_ROOT / "results" / "swebench_lite" / config_name
+    results_dir = Path(args.results_dir) if args.results_dir else default_results
     results_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Config:     {config_name}")

@@ -116,7 +116,8 @@ def main():
     config_name = config["name"]
 
     workdir = Path(args.workdir) if args.workdir else Path(tempfile.mkdtemp(prefix="repoqa_"))
-    results_dir = Path(args.results_dir) if args.results_dir else PROJECT_ROOT / "results" / "repo_qa" / config_name
+    default_results = PROJECT_ROOT / "results" / "repo_qa" / config_name
+    results_dir = Path(args.results_dir) if args.results_dir else default_results
     results_dir.mkdir(parents=True, exist_ok=True)
 
     tasks = load_tasks()

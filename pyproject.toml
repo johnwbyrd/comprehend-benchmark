@@ -6,7 +6,28 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "datasets",
+    "huggingface-hub",
 ]
 
 [project.optional-dependencies]
 swebench = ["swebench"]
+
+[dependency-groups]
+dev = [
+    "ruff",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific rules
+]
