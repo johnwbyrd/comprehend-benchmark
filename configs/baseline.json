@@ -1,0 +1,9 @@
+{
+  "name": "baseline",
+  "description": "Claude Code without the comprehend skill. Uses built-in Explore subagents and direct file reading.",
+  "skills_dir": null,
+  "allowed_tools": "Bash,Read,Write,Edit,Glob,Grep",
+  "max_turns": 50,
+  "model": "claude-sonnet-4-6",
+  "append_system_prompt": "You are solving a software engineering task. Read the issue description carefully, understand the codebase, and produce a patch that resolves the issue."
+}

@@ -1,0 +1,12 @@
+[project]
+name = "comprehend-benchmark"
+version = "0.1.0"
+description = "Benchmark the comprehend skill against baseline Claude Code on code understanding and editing tasks"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "datasets",
+]
+
+[project.optional-dependencies]
+swebench = ["swebench"]

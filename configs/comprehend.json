@@ -1,0 +1,10 @@
+{
+  "name": "comprehend",
+  "description": "Claude Code with the comprehend skill installed. Uses measure-first workflow, persistent REPL, and fan-out subagents.",
+  "skills_dir": "skills/comprehend",
+  "skills_source": "https://github.com/johnwbyrd/comprehend",
+  "allowed_tools": "Bash,Read,Write,Edit,Glob,Grep",
+  "max_turns": 75,
+  "model": "claude-sonnet-4-6",
+  "append_system_prompt": "You are solving a software engineering task. Read the issue description carefully. Before making changes, analyze the codebase thoroughly to understand the architecture and relevant code paths, then produce a patch that resolves the issue."
+}
