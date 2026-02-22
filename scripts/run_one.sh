@@ -13,7 +13,7 @@
 #
 # Prerequisites:
 #   - claude CLI on PATH with ANTHROPIC_API_KEY set
-#   - python3 on PATH
+#   - python on PATH (python3 or python)
 #   - git installed
 #
 # The script:
@@ -23,6 +23,16 @@
 #   4. Writes a combined result JSON with metrics
 
 set -euo pipefail
+
+# --- Find Python (python3 on Linux/macOS, python on Windows) ---
+if command -v python3 &>/dev/null; then
+    PYTHON=python3
+elif command -v python &>/dev/null; then
+    PYTHON=python
+else
+    echo "ERROR: python not found on PATH"
+    exit 1
+fi
 
 if [ $# -ne 4 ]; then
     echo "Usage: $0 <config_json> <repo_dir> <prompt_file> <output_json>"
@@ -36,7 +46,7 @@ OUTPUT_JSON="$4"
 
 # --- Parse config with Python (no jq dependency) ---
 read_config() {
-    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get(sys.argv[2],'') or '')" "$CONFIG_JSON" "$1"
+    $PYTHON -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get(sys.argv[2],'') or '')" "$CONFIG_JSON" "$1"
 }
 
 CONFIG_NAME=$(read_config name)
@@ -97,7 +107,7 @@ git diff > "$GIT_DIFF_FILE" 2>/dev/null || true
 # --- Build result JSON safely via Python reading from temp files ---
 mkdir -p "$(dirname "$OUTPUT_JSON")"
 
-python3 - "$CONFIG_NAME" "$REPO_DIR" "$WALL_TIME" \
+$PYTHON - "$CONFIG_NAME" "$REPO_DIR" "$WALL_TIME" \
     "$CLAUDE_OUTPUT_FILE" "$GIT_DIFF_FILE" "$OUTPUT_JSON" <<'PYEOF'
 import json
 import sys
