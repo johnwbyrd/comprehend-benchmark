@@ -137,7 +137,7 @@ result = {
     "claude_output": claude_data,
     "session_id": claude_data.get("session_id", ""),
     "result_text": claude_data.get("result", ""),
-    "total_cost_usd": claude_data.get("cost_usd", 0),
+    "total_cost_usd": claude_data.get("total_cost_usd", 0),
     "num_turns": claude_data.get("num_turns", 0),
 }
 
