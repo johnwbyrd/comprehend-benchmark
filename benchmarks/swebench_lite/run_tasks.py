@@ -65,6 +65,14 @@ def checkout_repo(task: dict, workdir: Path) -> Path:
             capture_output=True,
         )
 
+    # Reset any changes left by a previous task
+    subprocess.run(
+        ["git", "checkout", "."],
+        cwd=repo_dir,
+        check=False,
+        capture_output=True,
+    )
+
     subprocess.run(
         ["git", "checkout", base_commit],
         cwd=repo_dir,
@@ -164,23 +172,46 @@ def main():
     print(f"Tasks:      {len(tasks)}")
 
     results = []
+    skipped = 0
     for i, task in enumerate(tasks, 1):
+        instance_id = task["instance_id"]
+        existing = results_dir / f"{instance_id}.json"
+        if existing.exists():
+            print(f"\n[{i}/{len(tasks)}] Skipping {instance_id} (result exists)")
+            with open(existing) as f:
+                results.append(json.load(f))
+            skipped += 1
+            continue
         print(f"\n[{i}/{len(tasks)}]")
         result = run_task(task, config_path, workdir, results_dir)
         results.append(result)
 
-    # Write predictions JSONL
-    predictions_path = results_dir / "predictions.jsonl"
-    write_predictions(results, predictions_path, config_name)
+    if skipped:
+        print(f"\nSkipped {skipped} tasks with existing results (delete JSON to re-run)")
 
-    # Write summary
+    # Rebuild predictions JSONL from all per-task JSONs in results_dir
+    # so that successive single-task runs accumulate correctly
+    all_results = []
+    for result_file in sorted(results_dir.glob("*.json")):
+        if result_file.name == "summary.json":
+            continue
+        with open(result_file) as f:
+            r = json.load(f)
+        if "instance_id" not in r:
+            r["instance_id"] = result_file.stem
+        all_results.append(r)
+
+    predictions_path = results_dir / "predictions.jsonl"
+    write_predictions(all_results, predictions_path, config_name)
+
+    # Write summary covering all accumulated results
     summary_path = results_dir / "summary.json"
     summary = {
         "config": config_name,
-        "total_tasks": len(results),
-        "completed": sum(1 for r in results if "error" not in r),
-        "errors": sum(1 for r in results if "error" in r),
-        "total_wall_time": sum(r.get("wall_time_seconds", 0) for r in results),
+        "total_tasks": len(all_results),
+        "completed": sum(1 for r in all_results if "error" not in r),
+        "errors": sum(1 for r in all_results if "error" in r),
+        "total_wall_time": sum(r.get("wall_time_seconds", 0) for r in all_results),
     }
     with open(summary_path, "w") as f:
         json.dump(summary, f, indent=2)

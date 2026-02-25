@@ -90,6 +90,7 @@ trap 'rm -f "$CLAUDE_OUTPUT_FILE" "$GIT_DIFF_FILE"' EXIT
 
 cd "$REPO_DIR"
 
+unset CLAUDECODE
 claude -p "$PROMPT" \
     --output-format json \
     --allowedTools "$ALLOWED_TOOLS" \
