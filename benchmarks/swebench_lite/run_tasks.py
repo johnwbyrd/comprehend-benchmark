@@ -27,7 +27,7 @@ RUN_ONE = PROJECT_ROOT / "scripts" / "run_one.sh"
 SAMPLE_TASKS = SCRIPT_DIR / "sample_tasks.json"
 
 
-def load_tasks(use_all: bool, instance_id: str | None = None):
+def load_tasks(use_all: bool, instance_id: str | None = None, repos: list[str] | None = None):
     """Load SWE-bench Lite tasks from HuggingFace.
 
     Dataset: princeton-nlp/SWE-bench_Lite (test split, 300 tasks)
@@ -37,6 +37,9 @@ def load_tasks(use_all: bool, instance_id: str | None = None):
 
     if instance_id:
         return [t for t in dataset if t["instance_id"] == instance_id]
+
+    if repos:
+        return [t for t in dataset if t["repo"] in repos]
 
     if not use_all:
         with open(SAMPLE_TASKS) as f:
@@ -131,6 +134,10 @@ def main():
         "--all", action="store_true", help="Run all 300 tasks (default: curated subset)"
     )
     parser.add_argument("--instance-id", help="Run a single specific task")
+    parser.add_argument(
+        "--repo", action="append", dest="repos",
+        help="Filter to tasks from this repo (repeatable, e.g. --repo mwaskom/seaborn --repo pylint-dev/pylint)"
+    )
     parser.add_argument("--workdir", default=None, help="Working directory for repo checkouts")
     parser.add_argument("--results-dir", default=None, help="Directory for result JSON files")
     args = parser.parse_args()
@@ -149,7 +156,7 @@ def main():
     print(f"Work dir:   {workdir}")
     print(f"Results:    {results_dir}")
 
-    tasks = load_tasks(use_all=args.all, instance_id=args.instance_id)
+    tasks = load_tasks(use_all=args.all, instance_id=args.instance_id, repos=args.repos)
     if not tasks:
         print("No tasks loaded. See TODO comments in load_tasks().")
         return
