@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 269,
+  "git_diff": "diff --git a/lib/mpl_toolkits/mplot3d/art3d.py b/lib/mpl_toolkits/mplot3d/art3d.py\nindex 8fe6e7a9c1..63c6fb2b32 100644\n--- a/lib/mpl_toolkits/mplot3d/art3d.py\n+++ b/lib/mpl_toolkits/mplot3d/art3d.py\n@@ -211,6 +211,12 @@ class Line3D(lines.Line2D):\n \n     @artist.allow_rasterization\n     def draw(self, renderer):\n+        if not hasattr(self, '_verts3d'):\n+            raise AttributeError(\n+                \"It is not possible to draw a Line3D before setting 3D \"\n+                \"data. Either supply the necessary arguments when \"\n+                \"constructing a Line3D, or use the 'set_data_3d' or \"\n+                \"'set_3d_properties' methods.\")\n         xs3d, ys3d, zs3d = self._verts3d\n         xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)\n         self.set_data(xs, ys)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 267328,
+    "duration_api_ms": 265213,
+    "num_turns": 22,
+    "result": "The fix looks correct. Here's the summary of what was done and why:\n\n**Root cause:** `line_2d_to_3d` (called internally by `ax.plot()` in 3D) first does `line.__class__ = Line3D` and then calls `set_3d_properties(zs, zdir)`. If `set_3d_properties` raises an exception \u2014 e.g., `np.broadcast_to` fails due to incompatible array dimensions \u2014 `_verts3d` is never assigned. The line object is already in the axes (added by `super().plot()` before conversion), so it persists as a broken `Line3D` for the entire IPython session.\n\n**The fix** (`art3d.py:214\u2013219`): Add a `hasattr` guard in `draw()` before accessing `self._verts3d`. Instead of the cryptic `AttributeError: 'Line3D' object has no attribute '_verts3d'`, users now get a descriptive error message explaining what went wrong and pointing to the `set_data_3d` / `set_3d_properties` methods as the remedy.\n\nThis turns:\n```\nAttributeError: 'Line3D' object has no attribute '_verts3d'\n```\ninto:\n```\nAttributeError: It is not possible to draw a Line3D before setting 3D data.\nEither supply the necessary arguments when constructing a Line3D, or use\nthe 'set_data_3d' or 'set_3d_properties' methods.\n```",
+    "stop_reason": null,
+    "session_id": "94ebdb9c-eeea-4a2c-947c-f28ae3e27459",
+    "total_cost_usd": 0.9702242499999998,
+    "usage": {
+      "input_tokens": 22,
+      "cache_creation_input_tokens": 28637,
+      "cache_read_input_tokens": 744530,
+      "output_tokens": 16480,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 28637,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 22,
+        "outputTokens": 16480,
+        "cacheReadInputTokens": 744530,
+        "cacheCreationInputTokens": 28637,
+        "webSearchRequests": 0,
+        "costUSD": 0.9633562499999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 6443,
+        "outputTokens": 85,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.006868,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "e9bdd5ea-4010-4911-9bed-8762c32bdda4"
+  },
+  "session_id": "94ebdb9c-eeea-4a2c-947c-f28ae3e27459",
+  "result_text": "The fix looks correct. Here's the summary of what was done and why:\n\n**Root cause:** `line_2d_to_3d` (called internally by `ax.plot()` in 3D) first does `line.__class__ = Line3D` and then calls `set_3d_properties(zs, zdir)`. If `set_3d_properties` raises an exception \u2014 e.g., `np.broadcast_to` fails due to incompatible array dimensions \u2014 `_verts3d` is never assigned. The line object is already in the axes (added by `super().plot()` before conversion), so it persists as a broken `Line3D` for the entire IPython session.\n\n**The fix** (`art3d.py:214\u2013219`): Add a `hasattr` guard in `draw()` before accessing `self._verts3d`. Instead of the cryptic `AttributeError: 'Line3D' object has no attribute '_verts3d'`, users now get a descriptive error message explaining what went wrong and pointing to the `set_data_3d` / `set_3d_properties` methods as the remedy.\n\nThis turns:\n```\nAttributeError: 'Line3D' object has no attribute '_verts3d'\n```\ninto:\n```\nAttributeError: It is not possible to draw a Line3D before setting 3D data.\nEither supply the necessary arguments when constructing a Line3D, or use\nthe 'set_data_3d' or 'set_3d_properties' methods.\n```",
+  "total_cost_usd": 0.9702242499999998,
+  "num_turns": 22
+}

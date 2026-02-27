@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/pylint-dev__pylint",
+  "wall_time_seconds": 28,
+  "git_diff": "diff --git a/pylint/config/config_initialization.py b/pylint/config/config_initialization.py\nindex 24e453a73..c6e0a6f6f 100644\n--- a/pylint/config/config_initialization.py\n+++ b/pylint/config/config_initialization.py\n@@ -82,7 +82,7 @@ def _config_initialization(\n     if unrecognized_options:\n         msg = \", \".join(unrecognized_options)\n         linter.add_message(\"unrecognized-option\", line=0, args=msg)\n-        raise _UnrecognizedOptionError(options=unrecognized_options)\n+        sys.exit(32)\n \n     # Set the current module to configuration as we don't know where\n     # the --load-plugins key is coming from\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 26043,
+    "duration_api_ms": 25762,
+    "num_turns": 7,
+    "result": "The fix is minimal and correct. Instead of raising `_UnrecognizedOptionError` (which propagated as an unhandled exception causing the traceback), we now call `sys.exit(32)` \u2014 consistent with how other error conditions are handled in this file (lines 43-44 and 98-99).\n\n**What the fix does:**\n- When unrecognized options are found, the friendly error message is still printed: `Command line:1:0: E0015: Unrecognized option found: Q (unrecognized-option)`\n- Then `sys.exit(32)` is called instead of raising an exception, so no traceback is shown",
+    "stop_reason": null,
+    "session_id": "5fae0b48-1449-49be-898f-e78000cf7e9d",
+    "total_cost_usd": 0.16976824999999998,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 9533,
+      "cache_read_input_tokens": 154444,
+      "output_tokens": 1317,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 9533,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 8,
+        "outputTokens": 1317,
+        "cacheReadInputTokens": 154444,
+        "cacheCreationInputTokens": 9533,
+        "webSearchRequests": 0,
+        "costUSD": 0.16976824999999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "0087f0d3-f0ee-4979-875a-765920c57c0d"
+  },
+  "session_id": "5fae0b48-1449-49be-898f-e78000cf7e9d",
+  "result_text": "The fix is minimal and correct. Instead of raising `_UnrecognizedOptionError` (which propagated as an unhandled exception causing the traceback), we now call `sys.exit(32)` \u2014 consistent with how other error conditions are handled in this file (lines 43-44 and 98-99).\n\n**What the fix does:**\n- When unrecognized options are found, the friendly error message is still printed: `Command line:1:0: E0015: Unrecognized option found: Q (unrecognized-option)`\n- Then `sys.exit(32)` is called instead of raising an exception, so no traceback is shown",
+  "total_cost_usd": 0.16976824999999998,
+  "num_turns": 7
+}

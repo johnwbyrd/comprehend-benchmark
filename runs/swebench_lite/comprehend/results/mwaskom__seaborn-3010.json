@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 11,
+  "git_diff": "diff --git a/seaborn/_stats/regression.py b/seaborn/_stats/regression.py\nindex 7b7ddc8d..7b10679c 100644\n--- a/seaborn/_stats/regression.py\n+++ b/seaborn/_stats/regression.py\n@@ -23,6 +23,10 @@ class PolyFit(Stat):\n \n         x = data[\"x\"]\n         y = data[\"y\"]\n+        if x.isna().any() or y.isna().any():\n+            data = data.dropna(subset=[\"x\", \"y\"])\n+            x = data[\"x\"]\n+            y = data[\"y\"]\n         if x.nunique() <= self.order:\n             # TODO warn?\n             xx = yy = []\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 8817,
+    "duration_api_ms": 8623,
+    "num_turns": 3,
+    "result": "The fix drops rows with `NaN` values in `x` or `y` before passing the data to `np.polyfit`. Without this, `None`/`NaN` values cause `lstsq` to fail with a `LinAlgError`.",
+    "stop_reason": null,
+    "session_id": "893f7259-6dd4-441f-ad82-ce7f27274875",
+    "total_cost_usd": 0.09096825,
+    "usage": {
+      "input_tokens": 5,
+      "cache_creation_input_tokens": 7211,
+      "cache_read_input_tokens": 70799,
+      "output_tokens": 419,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 7211,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 5,
+        "outputTokens": 419,
+        "cacheReadInputTokens": 70799,
+        "cacheCreationInputTokens": 7211,
+        "webSearchRequests": 0,
+        "costUSD": 0.09096825,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "60170a04-0164-46d0-a9c5-f6c2fd46ac22"
+  },
+  "session_id": "893f7259-6dd4-441f-ad82-ce7f27274875",
+  "result_text": "The fix drops rows with `NaN` values in `x` or `y` before passing the data to `np.polyfit`. Without this, `None`/`NaN` values cause `lstsq` to fail with a `LinAlgError`.",
+  "total_cost_usd": 0.09096825,
+  "num_turns": 3
+}

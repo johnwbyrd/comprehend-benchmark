@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 138,
+  "git_diff": "diff --git a/astropy/io/ascii/qdp.py b/astropy/io/ascii/qdp.py\nindex 83a4f004aa..5324dc81cc 100644\n--- a/astropy/io/ascii/qdp.py\n+++ b/astropy/io/ascii/qdp.py\n@@ -68,7 +68,7 @@ def _line_type(line, delimiter=None):\n     _new_re = rf\"NO({sep}NO)+\"\n     _data_re = rf\"({_decimal_re}|NO|[-+]?nan)({sep}({_decimal_re}|NO|[-+]?nan))*)\"\n     _type_re = rf\"^\\s*((?P<command>{_command_re})|(?P<new>{_new_re})|(?P<data>{_data_re})?\\s*(\\!(?P<comment>.*))?\\s*$\"\n-    _line_type_re = re.compile(_type_re)\n+    _line_type_re = re.compile(_type_re, re.IGNORECASE)\n     line = line.strip()\n     if not line:\n         return \"comment\"\n@@ -306,7 +306,7 @@ def _get_tables_from_qdp_file(qdp_file, input_colnames=None, delimiter=None):\n \n             values = []\n             for v in line.split(delimiter):\n-                if v == \"NO\":\n+                if v.upper() == \"NO\":\n                     values.append(np.ma.masked)\n                 else:\n                     # Understand if number is int or float\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 8188,
+    "duration_api_ms": 139930,
+    "num_turns": 2,
+    "result": "The pytest run failed due to the unbuilt extension modules issue in the environment (not related to our changes). The fix has already been validated through direct Python testing earlier. The two changes are correct and address the issue:\n\n1. `re.IGNORECASE` added to the regex in `_line_type()` \u2014 makes `read serr 1 2`, `Read Serr 1 2`, etc. recognized as valid commands.\n2. `v.upper() == \"NO\"` in `_get_tables_from_qdp_file()` \u2014 makes lowercase `no` treated as a masked value in data lines.",
+    "stop_reason": null,
+    "session_id": "1576f9ef-d178-4ca1-979d-0425f32764f8",
+    "total_cost_usd": 0.7532102500000001,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 2235,
+      "cache_read_input_tokens": 95039,
+      "output_tokens": 228,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 2235,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 24,
+        "outputTokens": 6047,
+        "cacheReadInputTokens": 734591,
+        "cacheCreationInputTokens": 34915,
+        "webSearchRequests": 0,
+        "costUSD": 0.7368092500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 14711,
+        "outputTokens": 338,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.016401,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "02708e9e-da04-477a-bb15-3b737bd32d95"
+  },
+  "session_id": "1576f9ef-d178-4ca1-979d-0425f32764f8",
+  "result_text": "The pytest run failed due to the unbuilt extension modules issue in the environment (not related to our changes). The fix has already been validated through direct Python testing earlier. The two changes are correct and address the issue:\n\n1. `re.IGNORECASE` added to the regex in `_line_type()` \u2014 makes `read serr 1 2`, `Read Serr 1 2`, etc. recognized as valid commands.\n2. `v.upper() == \"NO\"` in `_get_tables_from_qdp_file()` \u2014 makes lowercase `no` treated as a masked value in data lines.",
+  "total_cost_usd": 0.7532102500000001,
+  "num_turns": 2
+}

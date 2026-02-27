@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/pylint-dev__pylint",
+  "wall_time_seconds": 267,
+  "git_diff": "diff --git a/pylint/reporters/text.py b/pylint/reporters/text.py\nindex 29bd46798..059c3c853 100644\n--- a/pylint/reporters/text.py\n+++ b/pylint/reporters/text.py\n@@ -175,14 +175,16 @@ class TextReporter(BaseReporter):\n         self._template = template\n \n         # Check to see if all parameters in the template are attributes of the Message\n-        arguments = re.findall(r\"\\{(.+?)(:.*)?\\}\", template)\n+        arguments = re.findall(r\"\\{(\\w+?)(:.*)?\\}\", template)\n         for argument in arguments:\n             if argument[0] not in MESSAGE_FIELDS:\n                 warnings.warn(\n                     f\"Don't recognize the argument '{argument[0]}' in the --msg-template. \"\n                     \"Are you sure it is supported on the current version of pylint?\"\n                 )\n-                template = re.sub(r\"\\{\" + argument[0] + r\"(:.*?)?\\}\", \"\", template)\n+                template = re.sub(\n+                    r\"\\{\" + argument[0] + r\"(:.*?)?\\}\", \"\", template\n+                )\n         self._fixed_template = template\n \n     def write_message(self, msg: Message) -> None:\ndiff --git a/tests/reporters/unittest_reporting.py b/tests/reporters/unittest_reporting.py\nindex 37f3e5fd9..8615c2fbf 100644\n--- a/tests/reporters/unittest_reporting.py\n+++ b/tests/reporters/unittest_reporting.py\n@@ -81,6 +81,23 @@ def test_template_option_end_line(linter) -> None:\n     assert out_lines[2] == \"my_mod:2:0:2:4: C0301: Line too long (3/4) (line-too-long)\"\n \n \n+def test_template_option_with_escaped_braces(linter) -> None:\n+    \"\"\"Test the msg-template option with escaped braces ({{ and }}).\n+\n+    Escaped braces should be treated as literal braces in the output,\n+    not as format field delimiters.\n+    \"\"\"\n+    output = StringIO()\n+    linter.reporter.out = output\n+    linter.config.msg_template = '{{ \"Category\": \"{category}\" }}'\n+    linter.open()\n+    linter.set_current_module(\"my_mod\")\n+    linter.add_message(\"C0301\", line=1, args=(1, 2))\n+\n+    out_lines = output.getvalue().split(\"\\n\")\n+    assert out_lines[1] == '{ \"Category\": \"convention\" }'\n+\n+\n def test_template_option_non_existing(linter) -> None:\n     \"\"\"Test the msg-template option with non-existent options.\n     This makes sure that this option remains backwards compatible as new\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 265974,
+    "duration_api_ms": 274309,
+    "num_turns": 25,
+    "result": "The fix is clean and correct. Here's a summary of what was changed:\n\n## Summary\n\n**Root Cause:** In `pylint/reporters/text.py`, the `on_set_current_module` method used the regex `r\"\\{(.+?)(:.*)?\\}\"` to find format fields in the message template. The `.+?` (any character, non-greedy) incorrectly matched content inside escaped double-braces like `{{` and `}}`.\n\nFor the template `{{ \"Category\": \"{category}\" }}`, the regex matched `{ \"Category\"` as a format field name (instead of recognizing that `{{` is an escaped literal brace), causing:\n1. A spurious `UserWarning` about unrecognized argument `{ \"Category\"`\n2. Removal of that \"argument\" from the template, leaving only `\" }` in the output\n\n**Fix:** Changed `.+?` to `\\w+?` in the field name part of the regex (`r\"\\{(\\w+?)(:.*)?\\}\"`). Python format field names must be valid identifiers (word characters: letters, digits, underscores), so this is more correct. With `\\w+?`:\n- `{{` \u2192 the second `{` is tried as a field opener, but `\\w+?` can't match the first `{` after it, so `{{...}}` is correctly skipped\n- `{category}` \u2192 correctly matched as a format field\n\n**Files changed:**\n- `pylint/reporters/text.py`: line 178 \u2014 regex fix\n- `tests/reporters/unittest_reporting.py`: added `test_template_option_with_escaped_braces` test",
+    "stop_reason": null,
+    "session_id": "106f0d6e-91de-4d6f-8f97-e9f03c13eb1f",
+    "total_cost_usd": 1.1858532500000003,
+    "usage": {
+      "input_tokens": 25,
+      "cache_creation_input_tokens": 34727,
+      "cache_read_input_tokens": 1065375,
+      "output_tokens": 16524,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 34727,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 25,
+        "outputTokens": 16524,
+        "cacheReadInputTokens": 1065375,
+        "cacheCreationInputTokens": 34727,
+        "webSearchRequests": 0,
+        "costUSD": 1.1629562500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 20127,
+        "outputTokens": 554,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.022896999999999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "6406900d-2ec9-4499-ba7e-76b2f0c01273"
+  },
+  "session_id": "106f0d6e-91de-4d6f-8f97-e9f03c13eb1f",
+  "result_text": "The fix is clean and correct. Here's a summary of what was changed:\n\n## Summary\n\n**Root Cause:** In `pylint/reporters/text.py`, the `on_set_current_module` method used the regex `r\"\\{(.+?)(:.*)?\\}\"` to find format fields in the message template. The `.+?` (any character, non-greedy) incorrectly matched content inside escaped double-braces like `{{` and `}}`.\n\nFor the template `{{ \"Category\": \"{category}\" }}`, the regex matched `{ \"Category\"` as a format field name (instead of recognizing that `{{` is an escaped literal brace), causing:\n1. A spurious `UserWarning` about unrecognized argument `{ \"Category\"`\n2. Removal of that \"argument\" from the template, leaving only `\" }` in the output\n\n**Fix:** Changed `.+?` to `\\w+?` in the field name part of the regex (`r\"\\{(\\w+?)(:.*)?\\}\"`). Python format field names must be valid identifiers (word characters: letters, digits, underscores), so this is more correct. With `\\w+?`:\n- `{{` \u2192 the second `{` is tried as a field opener, but `\\w+?` can't match the first `{` after it, so `{{...}}` is correctly skipped\n- `{category}` \u2192 correctly matched as a format field\n\n**Files changed:**\n- `pylint/reporters/text.py`: line 178 \u2014 regex fix\n- `tests/reporters/unittest_reporting.py`: added `test_template_option_with_escaped_braces` test",
+  "total_cost_usd": 1.1858532500000003,
+  "num_turns": 25
+}

@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 322,
+  "git_diff": "diff --git a/sphinx/util/typing.py b/sphinx/util/typing.py\nindex 2d4f67bba..e7c50a502 100644\n--- a/sphinx/util/typing.py\n+++ b/sphinx/util/typing.py\n@@ -105,6 +105,29 @@ def restify(cls: Optional[\"Type\"]) -> str:\n             return _restify_py36(cls)\n \n \n+def _get_annotation_module(annotation: Any) -> str:\n+    \"\"\"Get the best module name for an annotation type.\n+\n+    For C extension types that are defined in a private module (e.g., ``_struct``)\n+    but exposed via a public module (e.g., ``struct``), this returns the public\n+    module name so that cross-references resolve correctly.\n+    \"\"\"\n+    module = getattr(annotation, '__module__', None)\n+    if module:\n+        # Handle C extension types whose __module__ is a private implementation\n+        # module (e.g., struct.Struct has __module__='_struct' but is accessible\n+        # as struct.Struct).\n+        if module.startswith('_'):\n+            public_module = module[1:]  # e.g., '_struct' -> 'struct'\n+            if public_module in sys.modules:\n+                # Verify the class is actually accessible via the public module\n+                qualname = getattr(annotation, '__qualname__', None)\n+                name = getattr(annotation, '__name__', qualname)\n+                if name and getattr(sys.modules[public_module], name, None) is annotation:\n+                    return public_module\n+    return module or ''\n+\n+\n def _restify_py37(cls: Optional[\"Type\"]) -> str:\n     \"\"\"Convert python class to a reST reference.\"\"\"\n     from sphinx.util import inspect  # lazy loading\n@@ -146,18 +169,18 @@ def _restify_py37(cls: Optional[\"Type\"]) -> str:\n         if cls.__module__ == 'typing':\n             return ':class:`%s`' % cls.__qualname__\n         else:\n-            return ':class:`%s.%s`' % (cls.__module__, cls.__qualname__)\n+            return ':class:`%s.%s`' % (_get_annotation_module(cls), cls.__qualname__)\n     elif hasattr(cls, '_name'):\n         # SpecialForm\n         if cls.__module__ == 'typing':\n             return ':obj:`%s`' % cls._name\n         else:\n-            return ':obj:`%s.%s`' % (cls.__module__, cls._name)\n+            return ':obj:`%s.%s`' % (_get_annotation_module(cls), cls._name)\n     elif isinstance(cls, ForwardRef):\n         return ':class:`%s`' % cls.__forward_arg__\n     else:\n         # not a class (ex. TypeVar)\n-        return ':obj:`%s.%s`' % (cls.__module__, cls.__name__)\n+        return ':obj:`%s.%s`' % (_get_annotation_module(cls), cls.__name__)\n \n \n def _restify_py36(cls: Optional[\"Type\"]) -> str:\n@@ -174,7 +197,7 @@ def _restify_py36(cls: Optional[\"Type\"]) -> str:\n         else:\n             qualname = repr(cls).replace('typing.', '')\n     elif hasattr(cls, '__qualname__'):\n-        qualname = '%s.%s' % (module, cls.__qualname__)\n+        qualname = '%s.%s' % (_get_annotation_module(cls), cls.__qualname__)\n     else:\n         qualname = repr(cls)\n \n@@ -325,7 +348,7 @@ def _stringify_py37(annotation: Any) -> str:\n         else:\n             qualname = stringify(annotation.__origin__)  # ex. Union\n     elif hasattr(annotation, '__qualname__'):\n-        qualname = '%s.%s' % (module, annotation.__qualname__)\n+        qualname = '%s.%s' % (_get_annotation_module(annotation), annotation.__qualname__)\n     elif hasattr(annotation, '__origin__'):\n         # instantiated generic provided by a user\n         qualname = stringify(annotation.__origin__)\n@@ -379,7 +402,7 @@ def _stringify_py36(annotation: Any) -> str:\n         else:\n             qualname = repr(annotation).replace('typing.', '')\n     elif hasattr(annotation, '__qualname__'):\n-        qualname = '%s.%s' % (module, annotation.__qualname__)\n+        qualname = '%s.%s' % (_get_annotation_module(annotation), annotation.__qualname__)\n     else:\n         qualname = repr(annotation)\n \ndiff --git a/tests/test_util_typing.py b/tests/test_util_typing.py\nindex a2565f1e1..e5459d11f 100644\n--- a/tests/test_util_typing.py\n+++ b/tests/test_util_typing.py\n@@ -8,6 +8,7 @@\n     :license: BSD, see LICENSE for details.\n \"\"\"\n \n+import struct\n import sys\n from numbers import Integral\n from typing import (Any, Callable, Dict, Generator, List, NewType, Optional, Tuple, TypeVar,\n@@ -44,6 +45,7 @@ def test_restify():\n     assert restify(None) == \":obj:`None`\"\n     assert restify(Integral) == \":class:`numbers.Integral`\"\n     assert restify(Any) == \":obj:`Any`\"\n+    assert restify(struct.Struct) == \":class:`struct.Struct`\"\n \n \n def test_restify_type_hints_containers():\n@@ -125,6 +127,7 @@ def test_stringify():\n     assert stringify(None) == \"None\"\n     assert stringify(Integral) == \"numbers.Integral\"\n     assert stringify(Any) == \"Any\"\n+    assert stringify(struct.Struct) == \"struct.Struct\"\n \n \n def test_stringify_type_hints_containers():\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 320673,
+    "duration_api_ms": 342945,
+    "num_turns": 33,
+    "result": "Here's a summary of the fix:\n\n## Root Cause\n\n`struct.Struct` is a C extension type defined in the private `_struct` C module. Its `__module__` attribute returns `'_struct'`, not `'struct'`. When Sphinx's `restify()` and `stringify()` functions generated cross-references using `cls.__module__` directly, they produced `:class:`_struct.Struct`` \u2014 a reference to an undocumented private module \u2014 which Sphinx couldn't resolve.\n\n## Fix\n\nAdded a `_get_annotation_module()` helper function in `sphinx/util/typing.py` that:\n1. Gets the raw `__module__` attribute \n2. If it starts with `_` (indicating a private/C extension module), checks whether there's a public module with the same name minus the underscore (e.g., `_struct` \u2192 `struct`)\n3. Verifies the class is actually accessible via that public module\n4. Returns the public module name if found, otherwise the original module name\n\nThis helper is now used in `_restify_py37()`, `_restify_py36()`, `_stringify_py37()`, and `_stringify_py36()` wherever `cls.__module__` was previously used to build qualified names.\n\nThe fix also benefits other C extension types like `io.BytesIO` (whose `__module__` is `'_io'` but is exposed via `'io'`).",
+    "stop_reason": null,
+    "session_id": "6221bfb3-7656-4310-8e8c-65bda0806fdf",
+    "total_cost_usd": 1.52227325,
+    "usage": {
+      "input_tokens": 33,
+      "cache_creation_input_tokens": 35883,
+      "cache_read_input_tokens": 1442819,
+      "output_tokens": 12892,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 35883,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 33,
+        "outputTokens": 12892,
+        "cacheReadInputTokens": 1442819,
+        "cacheCreationInputTokens": 35883,
+        "webSearchRequests": 0,
+        "costUSD": 1.26814325,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 49758,
+        "outputTokens": 8520,
+        "cacheReadInputTokens": 1200345,
+        "cacheCreationInputTokens": 33390,
+        "webSearchRequests": 0,
+        "costUSD": 0.25413,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "3c82a2fd-f438-40e7-b8cb-7da2d2adbbfd"
+  },
+  "session_id": "6221bfb3-7656-4310-8e8c-65bda0806fdf",
+  "result_text": "Here's a summary of the fix:\n\n## Root Cause\n\n`struct.Struct` is a C extension type defined in the private `_struct` C module. Its `__module__` attribute returns `'_struct'`, not `'struct'`. When Sphinx's `restify()` and `stringify()` functions generated cross-references using `cls.__module__` directly, they produced `:class:`_struct.Struct`` \u2014 a reference to an undocumented private module \u2014 which Sphinx couldn't resolve.\n\n## Fix\n\nAdded a `_get_annotation_module()` helper function in `sphinx/util/typing.py` that:\n1. Gets the raw `__module__` attribute \n2. If it starts with `_` (indicating a private/C extension module), checks whether there's a public module with the same name minus the underscore (e.g., `_struct` \u2192 `struct`)\n3. Verifies the class is actually accessible via that public module\n4. Returns the public module name if found, otherwise the original module name\n\nThis helper is now used in `_restify_py37()`, `_restify_py36()`, `_stringify_py37()`, and `_stringify_py36()` wherever `cls.__module__` was previously used to build qualified names.\n\nThe fix also benefits other C extension types like `io.BytesIO` (whose `__module__` is `'_io'` but is exposed via `'io'`).",
+  "total_cost_usd": 1.52227325,
+  "num_turns": 33
+}

@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 44,
+  "git_diff": "diff --git a/lib/matplotlib/axis.py b/lib/matplotlib/axis.py\nindex e6e7e29f11..598436ba63 100644\n--- a/lib/matplotlib/axis.py\n+++ b/lib/matplotlib/axis.py\n@@ -1246,6 +1246,7 @@ class Axis(martist.Artist):\n                         v0, v1, emit=False, auto=auto)\n                     if other.figure != self.figure:\n                         other.figure.canvas.draw_idle()\n+                    other.callbacks.process(f\"{name}lim_changed\", other)\n \n         self.stale = True\n         return v0, v1\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 41602,
+    "duration_api_ms": 41191,
+    "num_turns": 9,
+    "result": "The fix is minimal and correct. Let me verify the logic:\n\n1. When `emit=True`, the original axis fires `xlim_changed` for itself (line 1241)\n2. For each sibling axis, `_set_lim` is called with `emit=False` to update its limits **without** triggering another round of sibling propagation (which would cause infinite recursion)\n3. **The new line (1249)** explicitly fires `xlim_changed` on each sibling after its limits are updated, so registered callbacks on shared axes are notified\n\nThis matches what the issue reporter suggested: the `emit=False` on sibling `_set_lim` calls is correct (prevents recursion), but we still need to fire the `xlim_changed` callbacks on those siblings. The fix adds exactly that.\n\nThe same pattern applies to `ylim_changed` since this is in the shared `_set_lim` method that handles both x and y axes via the `name` variable.",
+    "stop_reason": null,
+    "session_id": "925c2063-ed11-4e83-9ca9-15505caeacd6",
+    "total_cost_usd": 0.25506650000000003,
+    "usage": {
+      "input_tokens": 11,
+      "cache_creation_input_tokens": 11806,
+      "cache_read_input_tokens": 232948,
+      "output_tokens": 2590,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 11806,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 11,
+        "outputTokens": 2590,
+        "cacheReadInputTokens": 232948,
+        "cacheCreationInputTokens": 11806,
+        "webSearchRequests": 0,
+        "costUSD": 0.25506650000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "ee45a0c6-5968-4e7c-b31e-f7dc10ce283e"
+  },
+  "session_id": "925c2063-ed11-4e83-9ca9-15505caeacd6",
+  "result_text": "The fix is minimal and correct. Let me verify the logic:\n\n1. When `emit=True`, the original axis fires `xlim_changed` for itself (line 1241)\n2. For each sibling axis, `_set_lim` is called with `emit=False` to update its limits **without** triggering another round of sibling propagation (which would cause infinite recursion)\n3. **The new line (1249)** explicitly fires `xlim_changed` on each sibling after its limits are updated, so registered callbacks on shared axes are notified\n\nThis matches what the issue reporter suggested: the `emit=False` on sibling `_set_lim` calls is correct (prevents recursion), but we still need to fire the `xlim_changed` callbacks on those siblings. The fix adds exactly that.\n\nThe same pattern applies to `ylim_changed` since this is in the shared `_set_lim` method that handles both x and y axes via the `name` variable.",
+  "total_cost_usd": 0.25506650000000003,
+  "num_turns": 9
+}

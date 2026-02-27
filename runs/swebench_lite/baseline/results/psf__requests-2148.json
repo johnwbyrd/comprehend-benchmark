@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 38,
+  "git_diff": "diff --git a/requests/models.py b/requests/models.py\nindex 0dc55568..2ababaf8 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -9,6 +9,7 @@ This module contains the primary objects that power Requests.\n \n import collections\n import datetime\n+import socket\n \n from io import BytesIO, UnsupportedOperation\n from .hooks import default_hooks\n@@ -22,7 +23,7 @@ from .packages.urllib3.util import parse_url\n from .packages.urllib3.exceptions import DecodeError\n from .exceptions import (\n     HTTPError, RequestException, MissingSchema, InvalidURL,\n-    ChunkedEncodingError, ContentDecodingError)\n+    ChunkedEncodingError, ContentDecodingError, ConnectionError)\n from .utils import (\n     guess_filename, get_auth_from_url, requote_uri,\n     stream_decode_response_unicode, to_key_val_list, parse_header_links,\n@@ -640,6 +641,8 @@ class Response(object):\n                     raise ChunkedEncodingError(e)\n                 except DecodeError as e:\n                     raise ContentDecodingError(e)\n+                except socket.error as e:\n+                    raise ConnectionError(e)\n             except AttributeError:\n                 # Standard file-like object.\n                 while True:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 35232,
+    "duration_api_ms": 34850,
+    "num_turns": 11,
+    "result": "The fix is clean. Here's a summary of the three changes made to `requests/models.py`:\n\n1. **Added `import socket`** at the top of the file.\n2. **Added `ConnectionError` to the imports** from `.exceptions`.\n3. **Added a `socket.error` catch** inside the `generate()` function's inner `try` block (alongside the existing `IncompleteRead` and `DecodeError` handlers), re-raising it as `requests.exceptions.ConnectionError`.\n\nThe `socket.error` is caught in the same inner `try` block as the other urllib3-streaming exceptions, so a connection reset (or any other socket-level error) during response body streaming will now be wrapped in a proper `requests.exceptions.ConnectionError` instead of bubbling up as a raw `socket.error`.",
+    "stop_reason": null,
+    "session_id": "3eccb92d-7202-4452-b093-b99007e8fe37",
+    "total_cost_usd": 0.237746,
+    "usage": {
+      "input_tokens": 10,
+      "cache_creation_input_tokens": 12968,
+      "cache_read_input_tokens": 220942,
+      "output_tokens": 1847,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12968,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 10,
+        "outputTokens": 1847,
+        "cacheReadInputTokens": 220942,
+        "cacheCreationInputTokens": 12968,
+        "webSearchRequests": 0,
+        "costUSD": 0.237746,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "55409080-fc8b-4cb3-b09c-b9f74c459ad5"
+  },
+  "session_id": "3eccb92d-7202-4452-b093-b99007e8fe37",
+  "result_text": "The fix is clean. Here's a summary of the three changes made to `requests/models.py`:\n\n1. **Added `import socket`** at the top of the file.\n2. **Added `ConnectionError` to the imports** from `.exceptions`.\n3. **Added a `socket.error` catch** inside the `generate()` function's inner `try` block (alongside the existing `IncompleteRead` and `DecodeError` handlers), re-raising it as `requests.exceptions.ConnectionError`.\n\nThe `socket.error` is caught in the same inner `try` block as the other urllib3-streaming exceptions, so a connection reset (or any other socket-level error) during response body streaming will now be wrapped in a proper `requests.exceptions.ConnectionError` instead of bubbling up as a raw `socket.error`.",
+  "total_cost_usd": 0.237746,
+  "num_turns": 11
+}

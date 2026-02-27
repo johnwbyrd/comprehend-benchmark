@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 231,
+  "git_diff": "diff --git a/seaborn/axisgrid.py b/seaborn/axisgrid.py\nindex 75349099..857f4315 100644\n--- a/seaborn/axisgrid.py\n+++ b/seaborn/axisgrid.py\n@@ -1472,7 +1472,7 @@ class PairGrid(Grid):\n                 for ax in diag_axes[1:]:\n                     share_axis(diag_axes[0], ax, \"y\")\n \n-            self.diag_vars = np.array(diag_vars, np.object_)\n+            self.diag_vars = diag_vars\n             self.diag_axes = np.array(diag_axes, np.object_)\n \n         if \"hue\" not in signature(func).parameters:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 229621,
+    "duration_api_ms": 179381,
+    "num_turns": 25,
+    "result": "All 45 PairGrid tests pass.\n\n## Summary\n\nThe bug was in `seaborn/axisgrid.py` at line 1475 in the `map_diag` method.\n\n**Root cause:** When a DataFrame has MultiIndex columns (like `(\"A\", \"1\")`), iterating over the DataFrame yields tuples. These tuples are collected into `diag_vars`. Then `np.array(diag_vars, np.object_)` was called to store them \u2014 but numpy interprets a list of equal-length tuples as a 2D array (shape `(n, 2)`) rather than a 1D array of tuple objects. \n\nWhen iterating over the resulting 2D array, each `var` became a numpy array like `['A', '1']` instead of the tuple `('A', '1')`. Then `self.data[['A', '1']]` tried to select *two columns* by name ('A' and '1'), and since '1' is not a top-level column key in the MultiIndex, pandas raised `KeyError: \"['1'] not in index\"`.\n\n**Fix:** Changed `self.diag_vars = np.array(diag_vars, np.object_)` to `self.diag_vars = diag_vars`, keeping it as a plain list. Since `diag_vars` is only ever iterated (via `zip`), there's no need for it to be a numpy array.",
+    "stop_reason": null,
+    "session_id": "952bd680-5978-4933-9db8-4f03838d8096",
+    "total_cost_usd": 0.8547782500000001,
+    "usage": {
+      "input_tokens": 26,
+      "cache_creation_input_tokens": 25515,
+      "cache_read_input_tokens": 875175,
+      "output_tokens": 9069,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 25515,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 26,
+        "outputTokens": 9069,
+        "cacheReadInputTokens": 875175,
+        "cacheCreationInputTokens": 25515,
+        "webSearchRequests": 0,
+        "costUSD": 0.8239112500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 27137,
+        "outputTokens": 746,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.030867000000000006,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "a8fb911e-44ed-4c7f-8361-102f68bc2c05"
+  },
+  "session_id": "952bd680-5978-4933-9db8-4f03838d8096",
+  "result_text": "All 45 PairGrid tests pass.\n\n## Summary\n\nThe bug was in `seaborn/axisgrid.py` at line 1475 in the `map_diag` method.\n\n**Root cause:** When a DataFrame has MultiIndex columns (like `(\"A\", \"1\")`), iterating over the DataFrame yields tuples. These tuples are collected into `diag_vars`. Then `np.array(diag_vars, np.object_)` was called to store them \u2014 but numpy interprets a list of equal-length tuples as a 2D array (shape `(n, 2)`) rather than a 1D array of tuple objects. \n\nWhen iterating over the resulting 2D array, each `var` became a numpy array like `['A', '1']` instead of the tuple `('A', '1')`. Then `self.data[['A', '1']]` tried to select *two columns* by name ('A' and '1'), and since '1' is not a top-level column key in the MultiIndex, pandas raised `KeyError: \"['1'] not in index\"`.\n\n**Fix:** Changed `self.diag_vars = np.array(diag_vars, np.object_)` to `self.diag_vars = diag_vars`, keeping it as a plain list. Since `diag_vars` is only ever iterated (via `zip`), there's no need for it to be a numpy array.",
+  "total_cost_usd": 0.8547782500000001,
+  "num_turns": 25
+}

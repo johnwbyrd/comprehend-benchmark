@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 17,
+  "git_diff": "diff --git a/sphinx/ext/napoleon/docstring.py b/sphinx/ext/napoleon/docstring.py\nindex 755088ca5..a5a986e49 100644\n--- a/sphinx/ext/napoleon/docstring.py\n+++ b/sphinx/ext/napoleon/docstring.py\n@@ -682,7 +682,13 @@ class GoogleDocstring:\n         return self._parse_generic_section(_('Notes'), use_admonition)\n \n     def _parse_other_parameters_section(self, section: str) -> List[str]:\n-        return self._format_fields(_('Other Parameters'), self._consume_fields())\n+        if self._config.napoleon_use_param:\n+            # Allow to declare multiple parameters at once (ex: x, y: int)\n+            fields = self._consume_fields(multiple=True)\n+            return self._format_docutils_params(fields)\n+        else:\n+            fields = self._consume_fields()\n+            return self._format_fields(_('Other Parameters'), fields)\n \n     def _parse_parameters_section(self, section: str) -> List[str]:\n         if self._config.napoleon_use_param:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 15171,
+    "duration_api_ms": 14713,
+    "num_turns": 5,
+    "result": "The fix mirrors the logic from `_parse_parameters_section`:\n\n- When `napoleon_use_param` is `True`, it uses `_format_docutils_params` (which outputs `:param x:` / `:type x:` style) and also supports multiple parameters declared at once (e.g., `x, y: int`).\n- When `napoleon_use_param` is `False`, it falls back to the original `_format_fields` behavior.",
+    "stop_reason": null,
+    "session_id": "868c52fd-11ba-409c-adb4-4735ccff19b3",
+    "total_cost_usd": 0.12091625,
+    "usage": {
+      "input_tokens": 7,
+      "cache_creation_input_tokens": 6593,
+      "cache_read_input_tokens": 118800,
+      "output_tokens": 811,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 6593,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 7,
+        "outputTokens": 811,
+        "cacheReadInputTokens": 118800,
+        "cacheCreationInputTokens": 6593,
+        "webSearchRequests": 0,
+        "costUSD": 0.12091625,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "d97ca3a5-87de-4122-b822-adad2a5cd26b"
+  },
+  "session_id": "868c52fd-11ba-409c-adb4-4735ccff19b3",
+  "result_text": "The fix mirrors the logic from `_parse_parameters_section`:\n\n- When `napoleon_use_param` is `True`, it uses `_format_docutils_params` (which outputs `:param x:` / `:type x:` style) and also supports multiple parameters declared at once (e.g., `x, y: int`).\n- When `napoleon_use_param` is `False`, it falls back to the original `_format_fields` behavior.",
+  "total_cost_usd": 0.12091625,
+  "num_turns": 5
+}

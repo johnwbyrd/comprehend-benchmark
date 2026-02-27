@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 225,
+  "git_diff": "diff --git a/astropy/nddata/mixins/ndarithmetic.py b/astropy/nddata/mixins/ndarithmetic.py\nindex 4153dfccb2..56a8678791 100644\n--- a/astropy/nddata/mixins/ndarithmetic.py\n+++ b/astropy/nddata/mixins/ndarithmetic.py\n@@ -520,7 +520,7 @@ class NDArithmeticMixin:\n         elif self.mask is None and operand is not None:\n             # Make a copy so there is no reference in the result.\n             return deepcopy(operand.mask)\n-        elif operand is None:\n+        elif operand is None or operand.mask is None:\n             return deepcopy(self.mask)\n         else:\n             # Now lets calculate the resulting mask (operation enforces copy)\ndiff --git a/astropy/nddata/mixins/tests/test_ndarithmetic.py b/astropy/nddata/mixins/tests/test_ndarithmetic.py\nindex 8c461155ab..5cd4b1291c 100644\n--- a/astropy/nddata/mixins/tests/test_ndarithmetic.py\n+++ b/astropy/nddata/mixins/tests/test_ndarithmetic.py\n@@ -1226,6 +1226,34 @@ def test_arithmetics_mask_func():\n         nd1.add(nd2, handle_mask=mask_sad_func, fun=1)\n \n \n+def test_arithmetic_mask_func_one_operand_no_mask():\n+    # Regression test for https://github.com/astropy/astropy/issues/15228\n+    # When one operand has no mask, handle_mask should not be called with None\n+    array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])\n+    mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])\n+\n+    nref_nomask = NDDataRef(array)\n+    nref_mask = NDDataRef(array, mask=mask)\n+\n+    # multiply no mask by constant (no mask * no mask)\n+    assert nref_nomask.multiply(1.0, handle_mask=np.bitwise_or).mask is None\n+\n+    # multiply no mask by itself (no mask * no mask)\n+    assert nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask is None\n+\n+    # multiply mask by constant (mask * no mask)\n+    result = nref_mask.multiply(1.0, handle_mask=np.bitwise_or)\n+    np.testing.assert_array_equal(result.mask, mask)\n+\n+    # multiply mask by itself (mask * mask)\n+    result = nref_mask.multiply(nref_mask, handle_mask=np.bitwise_or)\n+    np.testing.assert_array_equal(result.mask, mask)\n+\n+    # multiply mask by no mask (mask * no mask)\n+    result = nref_mask.multiply(nref_nomask, handle_mask=np.bitwise_or)\n+    np.testing.assert_array_equal(result.mask, mask)\n+\n+\n @pytest.mark.parametrize(\"meth\", [\"add\", \"subtract\", \"divide\", \"multiply\"])\n def test_two_argument_useage(meth):\n     ndd1 = NDDataArithmetic(np.ones((3, 3)))\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 2008,
+    "duration_api_ms": 237464,
+    "num_turns": 1,
+    "result": "Already seen \u2014 that was the `git diff` output I already reviewed and summarized. The changes are complete.",
+    "stop_reason": null,
+    "session_id": "9c22310b-7016-4014-b63e-0f83485dacd3",
+    "total_cost_usd": 1.19492005,
+    "usage": {
+      "input_tokens": 3,
+      "cache_creation_input_tokens": 258,
+      "cache_read_input_tokens": 46894,
+      "output_tokens": 26,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 258,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 54,
+        "outputTokens": 8564,
+        "cacheReadInputTokens": 1300847,
+        "cacheCreationInputTokens": 27911,
+        "webSearchRequests": 0,
+        "costUSD": 1.03923725,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 29438,
+        "outputTokens": 5767,
+        "cacheReadInputTokens": 618673,
+        "cacheCreationInputTokens": 28434,
+        "webSearchRequests": 0,
+        "costUSD": 0.1556828000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "54aff7da-40be-4dab-85e9-7f85abe4bf39"
+  },
+  "session_id": "9c22310b-7016-4014-b63e-0f83485dacd3",
+  "result_text": "Already seen \u2014 that was the `git diff` output I already reviewed and summarized. The changes are complete.",
+  "total_cost_usd": 1.19492005,
+  "num_turns": 1
+}

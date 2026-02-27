@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 222,
+  "git_diff": "diff --git a/lib/matplotlib/axis.py b/lib/matplotlib/axis.py\nindex af0815d41d..c6dad1d07b 100644\n--- a/lib/matplotlib/axis.py\n+++ b/lib/matplotlib/axis.py\n@@ -2021,6 +2021,9 @@ class Axis(martist.Artist):\n         other limits, you should set the limits explicitly after setting the\n         ticks.\n         \"\"\"\n+        if kwargs and labels is None:\n+            raise ValueError(\n+                \"Keyword arguments cannot be used without setting 'labels'\")\n         result = self._set_tick_locations(ticks, minor=minor)\n         if labels is not None:\n             self.set_ticklabels(labels, minor=minor, **kwargs)\ndiff --git a/lib/matplotlib/tests/test_axes.py b/lib/matplotlib/tests/test_axes.py\nindex 3699c9df13..436ee4d0e0 100644\n--- a/lib/matplotlib/tests/test_axes.py\n+++ b/lib/matplotlib/tests/test_axes.py\n@@ -5754,6 +5754,13 @@ def test_set_ticks_with_labels(fig_test, fig_ref):\n     ax.set_yticks([2, 4], ['A', 'B'], minor=True)\n \n \n+def test_set_ticks_kwargs_raise_if_no_labels():\n+    # Ensure a ValueError is raised if kwargs are passed without labels\n+    fig, ax = plt.subplots()\n+    with pytest.raises(ValueError, match=\"Keyword arguments cannot be used without setting 'labels'\"):\n+        ax.set_xticks([1, 2, 3], fontsize=14)\n+\n+\n def test_set_noniterable_ticklabels():\n     # Ensure a useful TypeError message is raised\n     # when given a non-iterable ticklabels argument\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 220294,
+    "duration_api_ms": 213092,
+    "num_turns": 39,
+    "result": "The changes look good. Here's a summary of what was done:\n\n## Summary\n\n**Problem:** `Axis.set_ticks` (and `Axes.set_xticks`/`set_yticks`) silently ignored `**kwargs` when `labels` was not provided. This meant calls like `ax.set_xticks([0, 1], xticklabels=[\"a\", \"b\"])` would do nothing with the kwargs \u2014 no error, no effect.\n\n**Fix in `lib/matplotlib/axis.py`:**\n\nAdded a check at the start of `set_ticks` that raises a `ValueError` if `kwargs` are passed without `labels`:\n\n```python\nif kwargs and labels is None:\n    raise ValueError(\n        \"Keyword arguments cannot be used without setting 'labels'\")\n```\n\nThis fires *before* calling `_set_tick_locations`, so invalid usage is caught immediately rather than silently failing.\n\n**Test in `lib/matplotlib/tests/test_axes.py`:**\n\nAdded `test_set_ticks_kwargs_raise_if_no_labels` to verify the new error is raised when kwargs are passed without labels.\n\n**Cases covered:**\n- `ax.set_xticks([1, 2, 3], fontsize=14)` \u2192 raises `ValueError`\n- `ax.set_xticks([1, 2, 3], xticklabels=[\"a\", \"b\", \"c\"])` \u2192 raises `ValueError` (clearly a user mistake)\n- `ax.set_xticks([1, 2, 3], [\"a\", \"b\", \"c\"], fontsize=14)` \u2192 works correctly\n- `ax.set_xticks([1, 2, 3])` \u2192 works correctly (no kwargs)",
+    "stop_reason": null,
+    "session_id": "d5d1d899-8d02-471c-a654-7cded20ca617",
+    "total_cost_usd": 1.0315077500000003,
+    "usage": {
+      "input_tokens": 40,
+      "cache_creation_input_tokens": 23895,
+      "cache_read_input_tokens": 1264348,
+      "output_tokens": 8850,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 23895,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 40,
+        "outputTokens": 8850,
+        "cacheReadInputTokens": 1264348,
+        "cacheCreationInputTokens": 23895,
+        "webSearchRequests": 0,
+        "costUSD": 1.0029677500000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 24290,
+        "outputTokens": 850,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.02854,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "b8be52a4-9c1b-4441-8880-3897fb7fffb1"
+  },
+  "session_id": "d5d1d899-8d02-471c-a654-7cded20ca617",
+  "result_text": "The changes look good. Here's a summary of what was done:\n\n## Summary\n\n**Problem:** `Axis.set_ticks` (and `Axes.set_xticks`/`set_yticks`) silently ignored `**kwargs` when `labels` was not provided. This meant calls like `ax.set_xticks([0, 1], xticklabels=[\"a\", \"b\"])` would do nothing with the kwargs \u2014 no error, no effect.\n\n**Fix in `lib/matplotlib/axis.py`:**\n\nAdded a check at the start of `set_ticks` that raises a `ValueError` if `kwargs` are passed without `labels`:\n\n```python\nif kwargs and labels is None:\n    raise ValueError(\n        \"Keyword arguments cannot be used without setting 'labels'\")\n```\n\nThis fires *before* calling `_set_tick_locations`, so invalid usage is caught immediately rather than silently failing.\n\n**Test in `lib/matplotlib/tests/test_axes.py`:**\n\nAdded `test_set_ticks_kwargs_raise_if_no_labels` to verify the new error is raised when kwargs are passed without labels.\n\n**Cases covered:**\n- `ax.set_xticks([1, 2, 3], fontsize=14)` \u2192 raises `ValueError`\n- `ax.set_xticks([1, 2, 3], xticklabels=[\"a\", \"b\", \"c\"])` \u2192 raises `ValueError` (clearly a user mistake)\n- `ax.set_xticks([1, 2, 3], [\"a\", \"b\", \"c\"], fontsize=14)` \u2192 works correctly\n- `ax.set_xticks([1, 2, 3])` \u2192 works correctly (no kwargs)",
+  "total_cost_usd": 1.0315077500000003,
+  "num_turns": 39
+}

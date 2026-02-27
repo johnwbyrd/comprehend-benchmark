@@ -89,7 +89,8 @@ def checkout_repo(task: dict, workdir: Path) -> Path:
     return repo_dir
 
 
-def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) -> dict:
+def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path,
+             transcripts_dir: Path | None = None) -> dict:
     """Run a single SWE-bench task and return the result."""
     instance_id = task["instance_id"]
     print(f"\n{'='*60}")
@@ -105,9 +106,12 @@ def run_task(task: dict, config_path: Path, workdir: Path, results_dir: Path) ->
 
     # Run Claude Code
     output_json = results_dir / f"{instance_id}.json"
+    cmd = ["bash", str(RUN_ONE), str(config_path), str(repo_dir),
+           str(prompt_file), str(output_json)]
+    if transcripts_dir:
+        cmd.append(str(transcripts_dir))
     subprocess.run(
-        ["bash", str(RUN_ONE), str(config_path), str(repo_dir),
-         str(prompt_file), str(output_json)],
+        cmd,
         check=False,  # Don't fail the whole run if one task errors
     )
 
@@ -156,13 +160,17 @@ def main():
     config_name = config["name"]
 
     workdir = Path(args.workdir) if args.workdir else Path(tempfile.mkdtemp(prefix="swebench_"))
-    default_results = PROJECT_ROOT / "results" / "swebench_lite" / config_name
+    config_dir = PROJECT_ROOT / "runs" / "swebench_lite" / config_name
+    default_results = config_dir / "results"
     results_dir = Path(args.results_dir) if args.results_dir else default_results
     results_dir.mkdir(parents=True, exist_ok=True)
+    transcripts_dir = config_dir / "transcripts"
+    transcripts_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Config:     {config_name}")
     print(f"Work dir:   {workdir}")
     print(f"Results:    {results_dir}")
+    print(f"Transcripts:{transcripts_dir}")
 
     tasks = load_tasks(use_all=args.all, instance_id=args.instance_id, repos=args.repos)
     if not tasks:
@@ -183,7 +191,7 @@ def main():
             skipped += 1
             continue
         print(f"\n[{i}/{len(tasks)}]")
-        result = run_task(task, config_path, workdir, results_dir)
+        result = run_task(task, config_path, workdir, results_dir, transcripts_dir)
         results.append(result)
 
     if skipped:
@@ -201,11 +209,11 @@ def main():
             r["instance_id"] = result_file.stem
         all_results.append(r)
 
-    predictions_path = results_dir / "predictions.jsonl"
+    predictions_path = config_dir / "predictions.jsonl"
     write_predictions(all_results, predictions_path, config_name)
 
     # Write summary covering all accumulated results
-    summary_path = results_dir / "summary.json"
+    summary_path = config_dir / "summary.json"
     summary = {
         "config": config_name,
         "total_tasks": len(all_results),

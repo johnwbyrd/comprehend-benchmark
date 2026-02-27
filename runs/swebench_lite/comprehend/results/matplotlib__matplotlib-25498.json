@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 291,
+  "git_diff": "diff --git a/lib/matplotlib/colorbar.py b/lib/matplotlib/colorbar.py\nindex d3d53e3d98..fbd1beeac8 100644\n--- a/lib/matplotlib/colorbar.py\n+++ b/lib/matplotlib/colorbar.py\n@@ -511,6 +511,8 @@ class Colorbar:\n             self.norm = mappable.norm\n             self._reset_locator_formatter_scale()\n \n+        if mappable.get_array() is not None:\n+            mappable.autoscale_None()\n         self._draw_all()\n         if isinstance(self.mappable, contour.ContourSet):\n             CS = self.mappable\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 289454,
+    "duration_api_ms": 280403,
+    "num_turns": 44,
+    "result": "The fix is correct. The `norm` property setter calls `self.changed()` (line 619 in cm.py) after setting the new norm, which triggers `colorbar.update_normal`. My fix ensures `autoscale_None()` is called on the mappable at that point \u2014 exactly mirroring what `__init__` does (lines 306-307).\n\nHere's a summary of the fix:\n\n**Root cause:** When a user sets `plot.norm = LogNorm()` (a new norm instance without `vmin`/`vmax`), `update_normal` is called but didn't autoscale the norm from the data. `_process_values()` then fell back to setting `vmin=0, vmax=1`, which is invalid for `LogNorm` since `log(0) = -inf`, causing an error.\n\n**Fix:** Added the same `mappable.autoscale_None()` call that already exists in `Colorbar.__init__` (lines 306-307). This ensures the new norm's `vmin`/`vmax` are initialized from the actual data before drawing, but only when they're `None` (i.e., it won't override explicitly-set values).\n\n```python\n# Before fix:\nif mappable.norm != self.norm:\n    self.norm = mappable.norm\n    self._reset_locator_formatter_scale()\n\nself._draw_all()\n\n# After fix:\nif mappable.norm != self.norm:\n    self.norm = mappable.norm\n    self._reset_locator_formatter_scale()\n\nif mappable.get_array() is not None:\n    mappable.autoscale_None()\nself._draw_all()\n```",
+    "stop_reason": null,
+    "session_id": "de5cc25d-ec20-4411-8bcc-d72976ad26fb",
+    "total_cost_usd": 1.5404025500000003,
+    "usage": {
+      "input_tokens": 43,
+      "cache_creation_input_tokens": 37228,
+      "cache_read_input_tokens": 1620296,
+      "output_tokens": 12834,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 37228,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 43,
+        "outputTokens": 12834,
+        "cacheReadInputTokens": 1620296,
+        "cacheCreationInputTokens": 37228,
+        "webSearchRequests": 0,
+        "costUSD": 1.363888,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 27613,
+        "outputTokens": 5006,
+        "cacheReadInputTokens": 789328,
+        "cacheCreationInputTokens": 35951,
+        "webSearchRequests": 0,
+        "costUSD": 0.1765145499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "4a10fa68-cbbc-43f6-aadd-422c467fa0db"
+  },
+  "session_id": "de5cc25d-ec20-4411-8bcc-d72976ad26fb",
+  "result_text": "The fix is correct. The `norm` property setter calls `self.changed()` (line 619 in cm.py) after setting the new norm, which triggers `colorbar.update_normal`. My fix ensures `autoscale_None()` is called on the mappable at that point \u2014 exactly mirroring what `__init__` does (lines 306-307).\n\nHere's a summary of the fix:\n\n**Root cause:** When a user sets `plot.norm = LogNorm()` (a new norm instance without `vmin`/`vmax`), `update_normal` is called but didn't autoscale the norm from the data. `_process_values()` then fell back to setting `vmin=0, vmax=1`, which is invalid for `LogNorm` since `log(0) = -inf`, causing an error.\n\n**Fix:** Added the same `mappable.autoscale_None()` call that already exists in `Colorbar.__init__` (lines 306-307). This ensures the new norm's `vmin`/`vmax` are initialized from the actual data before drawing, but only when they're `None` (i.e., it won't override explicitly-set values).\n\n```python\n# Before fix:\nif mappable.norm != self.norm:\n    self.norm = mappable.norm\n    self._reset_locator_formatter_scale()\n\nself._draw_all()\n\n# After fix:\nif mappable.norm != self.norm:\n    self.norm = mappable.norm\n    self._reset_locator_formatter_scale()\n\nif mappable.get_array() is not None:\n    mappable.autoscale_None()\nself._draw_all()\n```",
+  "total_cost_usd": 1.5404025500000003,
+  "num_turns": 44
+}

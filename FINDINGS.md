@@ -470,16 +470,17 @@ checkpoint.
 
 ## Evaluation Reports
 
-SWE-bench harness evaluation report files:
+SWE-bench harness evaluation reports in `runs/swebench_lite/evaluations/`:
 
-- `claude-code-baseline.baseline-all.json` — 61 submitted, 32 resolved, 29 unresolved
-- `claude-code-comprehend.comprehend-full.json` — 61 submitted, 37 resolved, 24 unresolved
-- `claude-code-comprehend.comprehend-all.json` — 31 submitted (early partial run)
-- `claude-code-baseline.baseline-seaborn.json` — early seaborn-only eval
-- `claude-code-comprehend.comprehend-seaborn.json` — early seaborn-only eval
-- `claude-code-baseline.baseline-pylint.json` — early pylint-only eval
-- `claude-code-comprehend.comprehend-pylint.json` — early pylint-only eval
+- `baseline-all.json` — 61 submitted, 32 resolved, 29 unresolved
+- `comprehend-full.json` — 61 submitted, 37 resolved, 24 unresolved
+- `comprehend-all.json` — 31 submitted (early partial run)
+- `baseline-seaborn.json` — early seaborn-only eval
+- `comprehend-seaborn.json` — early seaborn-only eval
+- `baseline-pylint.json` — early pylint-only eval
+- `comprehend-pylint.json` — early pylint-only eval
 
-Per-task results stored in:
-- `results/swebench_lite/baseline/*.json` (61 files)
-- `results/swebench_lite/comprehend/*.json` (61 files)
+Per-task data stored in `runs/swebench_lite/{baseline,comprehend}/`:
+- `results/*.json` — 61 result files each (metrics, diff, cost, turns)
+- `transcripts/*.jsonl` — 61 full Claude Code conversation transcripts each
+- `transcripts/<instance-id>/subagents/` — subagent conversation data (where applicable)

@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 106,
+  "git_diff": "diff --git a/lib/matplotlib/cbook/__init__.py b/lib/matplotlib/cbook/__init__.py\nindex 34c6ddb861..79fbfb7b1a 100644\n--- a/lib/matplotlib/cbook/__init__.py\n+++ b/lib/matplotlib/cbook/__init__.py\n@@ -1746,7 +1746,10 @@ def _safe_first_finite(obj, *, skip_nonfinite=True):\n         raise RuntimeError(\"matplotlib does not \"\n                            \"support generators as input\")\n     else:\n-        return next(val for val in obj if safe_isfinite(val))\n+        return next(\n+            (val for val in obj if safe_isfinite(val)),\n+            next(iter(obj))  # fallback if no finite values exist\n+        )\n \n \n def sanitize_sequence(data):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 103667,
+    "duration_api_ms": 104423,
+    "num_turns": 15,
+    "result": "The fix is minimal and correct. Here's a summary of the change:\n\n**Root cause:** In `_safe_first_finite` (line 1749), the call `next(val for val in obj if safe_isfinite(val))` raises `StopIteration` when all values are non-finite (e.g., all NaN). This exception propagates up through `_convert_dx` where only `TypeError`, `IndexError`, and `KeyError` are caught \u2014 not `StopIteration`.\n\n**Fix:** Use `next()` with a default value (the two-argument form). When no finite value is found, it falls back to `next(iter(obj))`, returning the first element (NaN in this case). This:\n\n1. **Fixes the regression:** `ax.bar([np.nan], [np.nan])` no longer raises\n2. **Preserves the original fix:** When `x = [np.nan, 1.0, 2.0]`, it still correctly skips the NaN and returns `1.0`\n3. **Handles normal cases unchanged:** All-finite inputs continue to return the first finite element",
+    "stop_reason": null,
+    "session_id": "8ee707e6-24f0-4110-9163-070f9efc2c78",
+    "total_cost_usd": 0.4601715,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 15514,
+      "cache_read_input_tokens": 414982,
+      "output_tokens": 5589,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 15514,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 16,
+        "outputTokens": 5589,
+        "cacheReadInputTokens": 414982,
+        "cacheCreationInputTokens": 15514,
+        "webSearchRequests": 0,
+        "costUSD": 0.44425850000000006,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 13943,
+        "outputTokens": 394,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.015912999999999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "0285681f-f8a4-41e5-a6c3-4e516830b946"
+  },
+  "session_id": "8ee707e6-24f0-4110-9163-070f9efc2c78",
+  "result_text": "The fix is minimal and correct. Here's a summary of the change:\n\n**Root cause:** In `_safe_first_finite` (line 1749), the call `next(val for val in obj if safe_isfinite(val))` raises `StopIteration` when all values are non-finite (e.g., all NaN). This exception propagates up through `_convert_dx` where only `TypeError`, `IndexError`, and `KeyError` are caught \u2014 not `StopIteration`.\n\n**Fix:** Use `next()` with a default value (the two-argument form). When no finite value is found, it falls back to `next(iter(obj))`, returning the first element (NaN in this case). This:\n\n1. **Fixes the regression:** `ax.bar([np.nan], [np.nan])` no longer raises\n2. **Preserves the original fix:** When `x = [np.nan, 1.0, 2.0]`, it still correctly skips the NaN and returns `1.0`\n3. **Handles normal cases unchanged:** All-finite inputs continue to return the first finite element",
+  "total_cost_usd": 0.4601715,
+  "num_turns": 15
+}

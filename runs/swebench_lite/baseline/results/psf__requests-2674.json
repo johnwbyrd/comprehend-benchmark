@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 102,
+  "git_diff": "diff --git a/requests/adapters.py b/requests/adapters.py\nindex 841cbbfe..000f1167 100644\n--- a/requests/adapters.py\n+++ b/requests/adapters.py\n@@ -27,9 +27,11 @@ from .packages.urllib3.exceptions import ProtocolError\n from .packages.urllib3.exceptions import ReadTimeoutError\n from .packages.urllib3.exceptions import SSLError as _SSLError\n from .packages.urllib3.exceptions import ResponseError\n+from .packages.urllib3.exceptions import DecodeError as _DecodeError\n+from .packages.urllib3.exceptions import TimeoutError as _TimeoutError\n from .cookies import extract_cookies_to_jar\n from .exceptions import (ConnectionError, ConnectTimeout, ReadTimeout, SSLError,\n-                         ProxyError, RetryError)\n+                         ProxyError, RetryError, ContentDecodingError)\n from .auth import _basic_auth_str\n \n DEFAULT_POOLBLOCK = False\n@@ -429,6 +431,10 @@ class HTTPAdapter(BaseAdapter):\n                 raise SSLError(e, request=request)\n             elif isinstance(e, ReadTimeoutError):\n                 raise ReadTimeout(e, request=request)\n+            elif isinstance(e, _DecodeError):\n+                raise ContentDecodingError(e, request=request)\n+            elif isinstance(e, _TimeoutError):\n+                raise ReadTimeout(e, request=request)\n             else:\n                 raise\n \ndiff --git a/requests/models.py b/requests/models.py\nindex 4270c647..34a7a955 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -23,7 +23,7 @@ from .packages.urllib3.exceptions import (\n     DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)\n from .exceptions import (\n     HTTPError, MissingSchema, InvalidURL, ChunkedEncodingError,\n-    ContentDecodingError, ConnectionError, StreamConsumedError)\n+    ContentDecodingError, ConnectionError, StreamConsumedError, ReadTimeout)\n from .utils import (\n     guess_filename, get_auth_from_url, requote_uri,\n     stream_decode_response_unicode, to_key_val_list, parse_header_links,\n@@ -661,7 +661,7 @@ class Response(object):\n                 except DecodeError as e:\n                     raise ContentDecodingError(e)\n                 except ReadTimeoutError as e:\n-                    raise ConnectionError(e)\n+                    raise ReadTimeout(e)\n             else:\n                 # Standard file-like object.\n                 while True:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 99657,
+    "duration_api_ms": 99676,
+    "num_turns": 14,
+    "result": "All changes look correct. Here's a summary of what was fixed:\n\n**`requests/adapters.py`:**\n- Added imports for `DecodeError as _DecodeError` and `TimeoutError as _TimeoutError` from urllib3 (`TimeoutError` aliased to avoid collision with Python 3's built-in)\n- Added `ContentDecodingError` to the requests exceptions import\n- In the `except (_SSLError, _HTTPError)` handler, added two new `elif` branches:\n  - `_DecodeError` \u2192 raises `ContentDecodingError` (wraps urllib3's decode errors)\n  - `_TimeoutError` \u2192 raises `ReadTimeout` (catches base timeout class, e.g. proxy timeouts)\n\n**`requests/models.py`:**\n- Added `ReadTimeout` to the requests exceptions import\n- Fixed `iter_content()`'s `generate()` function: `ReadTimeoutError` now raises `ReadTimeout` instead of `ConnectionError`\n\nThe root causes were: (1) the `else: raise` in `adapters.py` was letting urllib3's `DecodeError` and `TimeoutError` (proxy timeouts raise this base class) escape unwrapped, and (2) `models.py` was incorrectly mapping read timeouts to `ConnectionError` rather than `ReadTimeout`.",
+    "stop_reason": null,
+    "session_id": "a1045a9e-bcb4-4909-8855-a245e548388d",
+    "total_cost_usd": 0.38673749999999996,
+    "usage": {
+      "input_tokens": 11,
+      "cache_creation_input_tokens": 14991,
+      "cache_read_input_tokens": 253818,
+      "output_tokens": 4722,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 14991,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 11,
+        "outputTokens": 4722,
+        "cacheReadInputTokens": 253818,
+        "cacheCreationInputTokens": 14991,
+        "webSearchRequests": 0,
+        "costUSD": 0.33870775,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 384,
+        "outputTokens": 2451,
+        "cacheReadInputTokens": 90145,
+        "cacheCreationInputTokens": 21101,
+        "webSearchRequests": 0,
+        "costUSD": 0.04802975,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "82f3d3d5-3b70-44f8-aeb1-9a8948601b0a"
+  },
+  "session_id": "a1045a9e-bcb4-4909-8855-a245e548388d",
+  "result_text": "All changes look correct. Here's a summary of what was fixed:\n\n**`requests/adapters.py`:**\n- Added imports for `DecodeError as _DecodeError` and `TimeoutError as _TimeoutError` from urllib3 (`TimeoutError` aliased to avoid collision with Python 3's built-in)\n- Added `ContentDecodingError` to the requests exceptions import\n- In the `except (_SSLError, _HTTPError)` handler, added two new `elif` branches:\n  - `_DecodeError` \u2192 raises `ContentDecodingError` (wraps urllib3's decode errors)\n  - `_TimeoutError` \u2192 raises `ReadTimeout` (catches base timeout class, e.g. proxy timeouts)\n\n**`requests/models.py`:**\n- Added `ReadTimeout` to the requests exceptions import\n- Fixed `iter_content()`'s `generate()` function: `ReadTimeoutError` now raises `ReadTimeout` instead of `ConnectionError`\n\nThe root causes were: (1) the `else: raise` in `adapters.py` was letting urllib3's `DecodeError` and `TimeoutError` (proxy timeouts raise this base class) escape unwrapped, and (2) `models.py` was incorrectly mapping read timeouts to `ConnectionError` rather than `ReadTimeout`.",
+  "total_cost_usd": 0.38673749999999996,
+  "num_turns": 14
+}

@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 96,
+  "git_diff": "diff --git a/lib/matplotlib/style/core.py b/lib/matplotlib/style/core.py\nindex fb0a5426e6..808c8e980d 100644\n--- a/lib/matplotlib/style/core.py\n+++ b/lib/matplotlib/style/core.py\n@@ -244,6 +244,36 @@ def update_nested_dict(main_dict, new_dict):\n     return main_dict\n \n \n+class StyleLibrary(dict):\n+    def __getitem__(self, key):\n+        if key in [\n+            \"seaborn\",\n+            \"seaborn-bright\",\n+            \"seaborn-colorblind\",\n+            \"seaborn-dark\",\n+            \"seaborn-darkgrid\",\n+            \"seaborn-dark-palette\",\n+            \"seaborn-deep\",\n+            \"seaborn-muted\",\n+            \"seaborn-notebook\",\n+            \"seaborn-paper\",\n+            \"seaborn-pastel\",\n+            \"seaborn-poster\",\n+            \"seaborn-talk\",\n+            \"seaborn-ticks\",\n+            \"seaborn-white\",\n+            \"seaborn-whitegrid\",\n+        ]:\n+            _api.warn_deprecated(\n+                \"3.6\", message=\"The seaborn styles shipped by Matplotlib \"\n+                \"are deprecated since %(since)s, as they no longer \"\n+                \"correspond to the styles shipped by seaborn. However, \"\n+                \"they will remain available as 'seaborn-v0_8-<style>'. \"\n+                \"Alternatively, directly use the seaborn API instead.\")\n+            key = key.replace(\"seaborn\", \"seaborn-v0_8\")\n+        return super().__getitem__(key)\n+\n+\n # Load style library\n # ==================\n _base_library = read_style_directory(BASE_LIBRARY_PATH)\n@@ -254,7 +284,7 @@ available = []\n def reload_library():\n     \"\"\"Reload the style library.\"\"\"\n     global library\n-    library = update_user_library(_base_library)\n+    library = update_user_library(StyleLibrary(_base_library))\n     available[:] = sorted(library.keys())\n \n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 93251,
+    "duration_api_ms": 91625,
+    "num_turns": 17,
+    "result": "The fix is clean and correct. Here's a summary of what was done and why:\n\n## Root Cause\n\nIn matplotlib 3.6, the seaborn styles were renamed from `seaborn-*` to `seaborn-v0_8-*` (because they no longer correspond to the styles shipped by the seaborn library). The `use()` function had a `fix_style()` helper that converted old names to new names with a deprecation warning \u2014 but **direct dictionary access** to `plt.style.library[\"seaborn-colorblind\"]` bypassed this entirely, causing a `KeyError`.\n\n## Fix\n\nCreated a `StyleLibrary(dict)` subclass that overrides `__getitem__` to:\n1. Detect the 16 old `seaborn-*` key names\n2. Emit the same deprecation warning as `use()` does\n3. Remap the key to `seaborn-v0_8-<style>` before looking it up in the underlying dict\n\nUpdated `reload_library()` to use `StyleLibrary(_base_library)` instead of a plain dict.\n\nThis means:\n- `plt.style.library[\"seaborn-colorblind\"]` \u2014 now works, returns the same data as `[\"seaborn-v0_8-colorblind\"]` with a deprecation warning\n- `plt.style.library[\"seaborn-v0_8-colorblind\"]` \u2014 still works unchanged\n- `plt.style.library[\"nonexistent\"]` \u2014 still raises `KeyError`\n- The deprecation warning message is identical to the one in `use()`, ensuring consistent messaging",
+    "stop_reason": null,
+    "session_id": "b5b2b1d3-25ed-472b-8203-5ae77fa674cb",
+    "total_cost_usd": 0.4887364999999999,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 18874,
+      "cache_read_input_tokens": 475766,
+      "output_tokens": 4602,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 18874,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 4602,
+        "cacheReadInputTokens": 475766,
+        "cacheCreationInputTokens": 18874,
+        "webSearchRequests": 0,
+        "costUSD": 0.47098550000000006,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 16396,
+        "outputTokens": 271,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.017750999999999996,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "2fe40520-bbda-4769-ac5c-59ad361e0dbd"
+  },
+  "session_id": "b5b2b1d3-25ed-472b-8203-5ae77fa674cb",
+  "result_text": "The fix is clean and correct. Here's a summary of what was done and why:\n\n## Root Cause\n\nIn matplotlib 3.6, the seaborn styles were renamed from `seaborn-*` to `seaborn-v0_8-*` (because they no longer correspond to the styles shipped by the seaborn library). The `use()` function had a `fix_style()` helper that converted old names to new names with a deprecation warning \u2014 but **direct dictionary access** to `plt.style.library[\"seaborn-colorblind\"]` bypassed this entirely, causing a `KeyError`.\n\n## Fix\n\nCreated a `StyleLibrary(dict)` subclass that overrides `__getitem__` to:\n1. Detect the 16 old `seaborn-*` key names\n2. Emit the same deprecation warning as `use()` does\n3. Remap the key to `seaborn-v0_8-<style>` before looking it up in the underlying dict\n\nUpdated `reload_library()` to use `StyleLibrary(_base_library)` instead of a plain dict.\n\nThis means:\n- `plt.style.library[\"seaborn-colorblind\"]` \u2014 now works, returns the same data as `[\"seaborn-v0_8-colorblind\"]` with a deprecation warning\n- `plt.style.library[\"seaborn-v0_8-colorblind\"]` \u2014 still works unchanged\n- `plt.style.library[\"nonexistent\"]` \u2014 still raises `KeyError`\n- The deprecation warning message is identical to the one in `use()`, ensuring consistent messaging",
+  "total_cost_usd": 0.4887364999999999,
+  "num_turns": 17
+}

@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 76,
+  "git_diff": "diff --git a/lib/matplotlib/axes/_axes.py b/lib/matplotlib/axes/_axes.py\nindex fdac0f3560..3a61e89e14 100644\n--- a/lib/matplotlib/axes/_axes.py\n+++ b/lib/matplotlib/axes/_axes.py\n@@ -2180,12 +2180,12 @@ class Axes(_AxesBase):\n             # wrap numpy arrays.\n             try:\n                 x0 = cbook._safe_first_finite(x0)\n-            except (TypeError, IndexError, KeyError):\n+            except (TypeError, IndexError, KeyError, StopIteration):\n                 pass\n \n             try:\n                 x = cbook._safe_first_finite(xconv)\n-            except (TypeError, IndexError, KeyError):\n+            except (TypeError, IndexError, KeyError, StopIteration):\n                 x = xconv\n \n             delist = False\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 73456,
+    "duration_api_ms": 72593,
+    "num_turns": 17,
+    "result": "The fix is correct. Here's the summary:\n\n**Root cause:** In `_axes.py:_convert_dx()`, when `ax.bar` is called with all-NaN x values, `cbook._safe_first_finite(x0)` iterates through the sequence looking for a finite value. Finding none, the generator expression `next(val for val in obj if safe_isfinite(val))` at `cbook/__init__.py:1749` raises `StopIteration`. \n\nThe `except` clauses at lines 2183 and 2188 only caught `(TypeError, IndexError, KeyError)` \u2014 not `StopIteration`.\n\n**Fix:** Added `StopIteration` to both `except` clauses. When the exception is caught:\n- For `x0` (line 2183): `x0` is left unchanged (passes through as-is), which is the right behavior since there's no finite element to use\n- For `x` (line 2188): `x` falls back to `xconv` unchanged, consistent with the original fallback logic",
+    "stop_reason": null,
+    "session_id": "d033dda8-18c4-4db6-b663-fa940d85e8b9",
+    "total_cost_usd": 0.444327,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 16200,
+      "cache_read_input_tokens": 500638,
+      "output_tokens": 3015,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16200,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 3015,
+        "cacheReadInputTokens": 500638,
+        "cacheCreationInputTokens": 16200,
+        "webSearchRequests": 0,
+        "costUSD": 0.42703399999999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 15608,
+        "outputTokens": 337,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.017293,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "2aa7debd-75b4-4806-a334-3be1e028b74f"
+  },
+  "session_id": "d033dda8-18c4-4db6-b663-fa940d85e8b9",
+  "result_text": "The fix is correct. Here's the summary:\n\n**Root cause:** In `_axes.py:_convert_dx()`, when `ax.bar` is called with all-NaN x values, `cbook._safe_first_finite(x0)` iterates through the sequence looking for a finite value. Finding none, the generator expression `next(val for val in obj if safe_isfinite(val))` at `cbook/__init__.py:1749` raises `StopIteration`. \n\nThe `except` clauses at lines 2183 and 2188 only caught `(TypeError, IndexError, KeyError)` \u2014 not `StopIteration`.\n\n**Fix:** Added `StopIteration` to both `except` clauses. When the exception is caught:\n- For `x0` (line 2183): `x0` is left unchanged (passes through as-is), which is the right behavior since there's no finite element to use\n- For `x` (line 2188): `x` falls back to `xconv` unchanged, consistent with the original fallback logic",
+  "total_cost_usd": 0.444327,
+  "num_turns": 17
+}

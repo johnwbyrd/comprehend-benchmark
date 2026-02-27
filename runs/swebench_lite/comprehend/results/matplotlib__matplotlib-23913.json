@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 59,
+  "git_diff": "diff --git a/lib/matplotlib/legend.py b/lib/matplotlib/legend.py\nindex 9e5b903d59..747047c57a 100644\n--- a/lib/matplotlib/legend.py\n+++ b/lib/matplotlib/legend.py\n@@ -286,6 +286,9 @@ handler_map : dict or None\n     The custom dictionary mapping instances or types to a legend\n     handler. This *handler_map* updates the default handler map\n     found at `matplotlib.legend.Legend.get_legend_handler_map`.\n+\n+draggable : bool, default: False\n+    Whether the legend can be dragged with the mouse.\n \"\"\")\n \n \n@@ -342,7 +345,8 @@ class Legend(Artist):\n         title_fontproperties=None,  # properties for the legend title\n         alignment=\"center\",       # control the alignment within the legend box\n         *,\n-        ncol=1  # synonym for ncols (backward compatibility)\n+        ncol=1,  # synonym for ncols (backward compatibility)\n+        draggable=False  # whether the legend can be dragged with the mouse\n     ):\n         \"\"\"\n         Parameters\n@@ -538,6 +542,7 @@ class Legend(Artist):\n \n         self.set_title(title, prop=title_prop_fp)\n         self._draggable = None\n+        self.set_draggable(draggable)\n \n         # set the text color\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 57219,
+    "duration_api_ms": 58732,
+    "num_turns": 20,
+    "result": "The implementation is clean and complete. Here's a summary of the three changes made to `lib/matplotlib/legend.py`:\n\n1. **`_legend_kw_doc` docstring** (line 290): Added `draggable : bool, default: False` documentation so it appears in the `Legend.__init__` docstring (via `%(_legend_kw_doc)s` interpolation) and in `ax.legend()`/`fig.legend()` docs.\n\n2. **`Legend.__init__` signature** (line 349): Added `draggable=False` as a keyword-only argument (after `*`), alongside the existing `ncol` backward-compat alias.\n\n3. **`Legend.__init__` body** (line 545): Added `self.set_draggable(draggable)` immediately after `self._draggable = None`, delegating to the existing `set_draggable` method which handles all the `DraggableLegend` wiring.\n\nUsers can now do:\n```python\nax.legend(draggable=True)\n# instead of:\nax.legend().set_draggable(True)\n```",
+    "stop_reason": null,
+    "session_id": "48973148-05cd-4b40-aa00-a731477ece27",
+    "total_cost_usd": 0.39373450000000004,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 16446,
+      "cache_read_input_tokens": 413934,
+      "output_tokens": 3158,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16446,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 16,
+        "outputTokens": 3158,
+        "cacheReadInputTokens": 413934,
+        "cacheCreationInputTokens": 16446,
+        "webSearchRequests": 0,
+        "costUSD": 0.38878450000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 4650,
+        "outputTokens": 60,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.00495,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "80bd5132-53be-4393-8343-9476ef220956"
+  },
+  "session_id": "48973148-05cd-4b40-aa00-a731477ece27",
+  "result_text": "The implementation is clean and complete. Here's a summary of the three changes made to `lib/matplotlib/legend.py`:\n\n1. **`_legend_kw_doc` docstring** (line 290): Added `draggable : bool, default: False` documentation so it appears in the `Legend.__init__` docstring (via `%(_legend_kw_doc)s` interpolation) and in `ax.legend()`/`fig.legend()` docs.\n\n2. **`Legend.__init__` signature** (line 349): Added `draggable=False` as a keyword-only argument (after `*`), alongside the existing `ncol` backward-compat alias.\n\n3. **`Legend.__init__` body** (line 545): Added `self.set_draggable(draggable)` immediately after `self._draggable = None`, delegating to the existing `set_draggable` method which handles all the `DraggableLegend` wiring.\n\nUsers can now do:\n```python\nax.legend(draggable=True)\n# instead of:\nax.legend().set_draggable(True)\n```",
+  "total_cost_usd": 0.39373450000000004,
+  "num_turns": 20
+}

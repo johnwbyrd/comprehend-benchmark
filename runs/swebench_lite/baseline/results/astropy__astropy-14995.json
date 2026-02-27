@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 137,
+  "git_diff": "diff --git a/astropy/nddata/mixins/ndarithmetic.py b/astropy/nddata/mixins/ndarithmetic.py\nindex 4153dfccb2..69d77148e5 100644\n--- a/astropy/nddata/mixins/ndarithmetic.py\n+++ b/astropy/nddata/mixins/ndarithmetic.py\n@@ -522,6 +522,8 @@ class NDArithmeticMixin:\n             return deepcopy(operand.mask)\n         elif operand is None:\n             return deepcopy(self.mask)\n+        elif operand.mask is None:\n+            return deepcopy(self.mask)\n         else:\n             # Now lets calculate the resulting mask (operation enforces copy)\n             return handle_mask(self.mask, operand.mask, **kwds)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 133971,
+    "duration_api_ms": 140837,
+    "num_turns": 27,
+    "result": "The fix is confirmed and working. Here's a summary of what was done:\n\n## Summary\n\n**Bug:** In `NDDataRef._arithmetic_mask()` (file: `astropy/nddata/mixins/ndarithmetic.py:515`), when `self` has a mask but `operand` has no mask (`operand.mask is None`), the code falls through to the `else` branch which calls `handle_mask(self.mask, operand.mask)` = `handle_mask(self.mask, None)`. For callables like `np.bitwise_or`, this fails with `TypeError: unsupported operand type(s) for |: 'int' and 'NoneType'`.\n\n**Fix:** Added one `elif` case to handle this scenario \u2014 when `self.mask` is not None, `operand` is not None, but `operand.mask` is None, simply return a deep copy of `self.mask`:\n\n```python\nelif operand.mask is None:\n    return deepcopy(self.mask)\n```\n\nThis is symmetric with the existing case on line 520 that handles the reverse situation (self has no mask, operand has a mask).",
+    "stop_reason": null,
+    "session_id": "6b3f1469-cf96-439d-b98a-2eb934661fe4",
+    "total_cost_usd": 0.73471575,
+    "usage": {
+      "input_tokens": 28,
+      "cache_creation_input_tokens": 21061,
+      "cache_read_input_tokens": 823937,
+      "output_tokens": 6475,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 21061,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 28,
+        "outputTokens": 6475,
+        "cacheReadInputTokens": 823937,
+        "cacheCreationInputTokens": 21061,
+        "webSearchRequests": 0,
+        "costUSD": 0.70561475,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 24171,
+        "outputTokens": 986,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.029100999999999995,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "68e02389-280d-4095-a094-ac7d695aff7e"
+  },
+  "session_id": "6b3f1469-cf96-439d-b98a-2eb934661fe4",
+  "result_text": "The fix is confirmed and working. Here's a summary of what was done:\n\n## Summary\n\n**Bug:** In `NDDataRef._arithmetic_mask()` (file: `astropy/nddata/mixins/ndarithmetic.py:515`), when `self` has a mask but `operand` has no mask (`operand.mask is None`), the code falls through to the `else` branch which calls `handle_mask(self.mask, operand.mask)` = `handle_mask(self.mask, None)`. For callables like `np.bitwise_or`, this fails with `TypeError: unsupported operand type(s) for |: 'int' and 'NoneType'`.\n\n**Fix:** Added one `elif` case to handle this scenario \u2014 when `self.mask` is not None, `operand` is not None, but `operand.mask` is None, simply return a deep copy of `self.mask`:\n\n```python\nelif operand.mask is None:\n    return deepcopy(self.mask)\n```\n\nThis is symmetric with the existing case on line 520 that handles the reverse situation (self has no mask, operand has a mask).",
+  "total_cost_usd": 0.73471575,
+  "num_turns": 27
+}

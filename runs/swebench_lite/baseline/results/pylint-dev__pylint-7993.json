@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/pylint-dev__pylint",
+  "wall_time_seconds": 252,
+  "git_diff": "diff --git a/pylint/reporters/text.py b/pylint/reporters/text.py\nindex 29bd46798..04a048d30 100644\n--- a/pylint/reporters/text.py\n+++ b/pylint/reporters/text.py\n@@ -175,7 +175,7 @@ class TextReporter(BaseReporter):\n         self._template = template\n \n         # Check to see if all parameters in the template are attributes of the Message\n-        arguments = re.findall(r\"\\{(.+?)(:.*)?\\}\", template)\n+        arguments = re.findall(r\"(?<!\\{)\\{(\\w+?)(:.*)?\\}(?!\\})\", template)\n         for argument in arguments:\n             if argument[0] not in MESSAGE_FIELDS:\n                 warnings.warn(\ndiff --git a/tests/reporters/unittest_reporting.py b/tests/reporters/unittest_reporting.py\nindex 37f3e5fd9..ff5d8e29d 100644\n--- a/tests/reporters/unittest_reporting.py\n+++ b/tests/reporters/unittest_reporting.py\n@@ -113,6 +113,25 @@ def test_template_option_non_existing(linter) -> None:\n     assert out_lines[2] == \"my_mod:2::()\"\n \n \n+def test_template_option_with_braces(linter) -> None:\n+    \"\"\"Test the msg-template option with braces escaping.\n+    This makes sure that {{ and }} are treated as literal braces and\n+    not as format arguments. See https://github.com/PyCQA/pylint/issues/7948\n+    \"\"\"\n+    output = StringIO()\n+    linter.reporter.out = output\n+    linter.config.msg_template = '{{ \"Category\": \"{category}\" }}'\n+    linter.open()\n+    with warnings.catch_warnings():\n+        warnings.simplefilter(\"error\")\n+        linter.set_current_module(\"my_mod\")\n+\n+    linter.add_message(\"C0301\", line=1, args=(1, 2))\n+\n+    out_lines = output.getvalue().split(\"\\n\")\n+    assert out_lines[1] == '{ \"Category\": \"convention\" }'\n+\n+\n def test_deprecation_set_output(recwarn):\n     \"\"\"TODO remove in 3.0.\"\"\"\n     reporter = BaseReporter()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 249377,
+    "duration_api_ms": 255121,
+    "num_turns": 39,
+    "result": "The fix is clean and minimal. Here's a summary of the changes:\n\n**Root cause:** The regex `r\"\\{(.+?)(:.*)?\\}\"` on line 178 used `.+?` which matches any character including `{` and spaces. For a template like `{{ \"Category\": \"{category}\" }}`, it matched the whole span `{ \"Category\": \"{category}\" }` and extracted `{ \"Category\"` as the argument name \u2014 triggering a spurious warning and then mangling the template.\n\n**Fix:** Changed the regex to `r\"(?<!\\{)\\{(\\w+?)(:.*)?\\}(?!\\})\"` which:\n1. `(?<!\\{)` \u2014 negative lookbehind: skips `{{` escape sequences (the `{` must not be preceded by another `{`)\n2. `\\w+?` \u2014 restricts argument names to word characters only (letters, digits, underscores) \u2014 valid Python format identifiers\n3. `(?!\\})` \u2014 negative lookahead: skips `}}` escape sequences (the closing `}` must not be followed by another `}`)\n\nThis correctly identifies only `category` as the format argument in `{{ \"Category\": \"{category}\" }}`, preserving the literal `{` and `}` from the escaped double braces.",
+    "stop_reason": null,
+    "session_id": "bdb802f6-01bd-428c-85df-58fe77dbc1d6",
+    "total_cost_usd": 1.2088837500000003,
+    "usage": {
+      "input_tokens": 40,
+      "cache_creation_input_tokens": 24741,
+      "cache_read_input_tokens": 1405605,
+      "output_tokens": 12212,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 24741,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 40,
+        "outputTokens": 12212,
+        "cacheReadInputTokens": 1405605,
+        "cacheCreationInputTokens": 24741,
+        "webSearchRequests": 0,
+        "costUSD": 1.1629337499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 39235,
+        "outputTokens": 1343,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.04595000000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "0ea99ea0-2a5a-4304-bae1-49597e0e1bc1"
+  },
+  "session_id": "bdb802f6-01bd-428c-85df-58fe77dbc1d6",
+  "result_text": "The fix is clean and minimal. Here's a summary of the changes:\n\n**Root cause:** The regex `r\"\\{(.+?)(:.*)?\\}\"` on line 178 used `.+?` which matches any character including `{` and spaces. For a template like `{{ \"Category\": \"{category}\" }}`, it matched the whole span `{ \"Category\": \"{category}\" }` and extracted `{ \"Category\"` as the argument name \u2014 triggering a spurious warning and then mangling the template.\n\n**Fix:** Changed the regex to `r\"(?<!\\{)\\{(\\w+?)(:.*)?\\}(?!\\})\"` which:\n1. `(?<!\\{)` \u2014 negative lookbehind: skips `{{` escape sequences (the `{` must not be preceded by another `{`)\n2. `\\w+?` \u2014 restricts argument names to word characters only (letters, digits, underscores) \u2014 valid Python format identifiers\n3. `(?!\\})` \u2014 negative lookahead: skips `}}` escape sequences (the closing `}` must not be followed by another `}`)\n\nThis correctly identifies only `category` as the format argument in `{{ \"Category\": \"{category}\" }}`, preserving the literal `{` and `}` from the escaped double braces.",
+  "total_cost_usd": 1.2088837500000003,
+  "num_turns": 39
+}

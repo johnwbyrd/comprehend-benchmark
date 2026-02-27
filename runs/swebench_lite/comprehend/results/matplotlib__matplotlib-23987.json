@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 138,
+  "git_diff": "diff --git a/lib/matplotlib/figure.py b/lib/matplotlib/figure.py\nindex 5bbb786984..547b1deac7 100644\n--- a/lib/matplotlib/figure.py\n+++ b/lib/matplotlib/figure.py\n@@ -2426,9 +2426,12 @@ class Figure(FigureBase):\n             if isinstance(tight_layout, dict):\n                 self.get_layout_engine().set(**tight_layout)\n         elif constrained_layout is not None:\n-            self.set_layout_engine(layout='constrained')\n-            if isinstance(constrained_layout, dict):\n-                self.get_layout_engine().set(**constrained_layout)\n+            if constrained_layout:\n+                self.set_layout_engine(layout='constrained')\n+                if isinstance(constrained_layout, dict):\n+                    self.get_layout_engine().set(**constrained_layout)\n+            else:\n+                self.set_layout_engine(layout=None)\n         else:\n             # everything is None, so use default:\n             self.set_layout_engine(layout=layout)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 135079,
+    "duration_api_ms": 134082,
+    "num_turns": 8,
+    "result": "The fix is clean. Let me verify the logic:\n\n- **`constrained_layout=True`** \u2192 enters `if constrained_layout:` \u2192 creates `ConstrainedLayoutEngine` \u2713\n- **`constrained_layout={'h_pad': 0.5}` (dict)** \u2192 truthy \u2192 creates `ConstrainedLayoutEngine` with settings \u2713\n- **`constrained_layout=False`** \u2192 enters `else:` \u2192 calls `set_layout_engine(layout=None)` which respects `figure.autolayout` rcParam but does NOT create a constrained engine \u2713\n- **`constrained_layout=None`** \u2192 skips this branch entirely, falls to `else` branch (default behavior) \u2713\n\nThe root cause: `False is not None` evaluates to `True`, so `constrained_layout=False` was incorrectly entering the branch and creating a `ConstrainedLayoutEngine` (which has `adjust_compatible=False`). When `subplots_adjust` is called, it checks `not engine.adjust_compatible` and fires the warning.\n\nThe fix adds a truthiness check \u2014 only create the `ConstrainedLayoutEngine` when `constrained_layout` is truthy. When `constrained_layout=False`, we call `set_layout_engine(layout=None)` which will check `figure.autolayout` and `figure.constrained_layout.use` rcParams, but crucially will use a `TightLayoutEngine` (which has `adjust_compatible=True`) or `None` \u2014 neither of which triggers the warning.",
+    "stop_reason": null,
+    "session_id": "a6ec4525-f7e1-4274-9200-ed7d373b3b3b",
+    "total_cost_usd": 0.50107315,
+    "usage": {
+      "input_tokens": 10,
+      "cache_creation_input_tokens": 16435,
+      "cache_read_input_tokens": 229598,
+      "output_tokens": 7288,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16435,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 10,
+        "outputTokens": 7288,
+        "cacheReadInputTokens": 229598,
+        "cacheCreationInputTokens": 16435,
+        "webSearchRequests": 0,
+        "costUSD": 0.39976775,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 46,
+        "outputTokens": 3386,
+        "cacheReadInputTokens": 354994,
+        "cacheCreationInputTokens": 39064,
+        "webSearchRequests": 0,
+        "costUSD": 0.1013054,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "e66d6afb-e4b2-498e-a5fe-c3e93cfae62b"
+  },
+  "session_id": "a6ec4525-f7e1-4274-9200-ed7d373b3b3b",
+  "result_text": "The fix is clean. Let me verify the logic:\n\n- **`constrained_layout=True`** \u2192 enters `if constrained_layout:` \u2192 creates `ConstrainedLayoutEngine` \u2713\n- **`constrained_layout={'h_pad': 0.5}` (dict)** \u2192 truthy \u2192 creates `ConstrainedLayoutEngine` with settings \u2713\n- **`constrained_layout=False`** \u2192 enters `else:` \u2192 calls `set_layout_engine(layout=None)` which respects `figure.autolayout` rcParam but does NOT create a constrained engine \u2713\n- **`constrained_layout=None`** \u2192 skips this branch entirely, falls to `else` branch (default behavior) \u2713\n\nThe root cause: `False is not None` evaluates to `True`, so `constrained_layout=False` was incorrectly entering the branch and creating a `ConstrainedLayoutEngine` (which has `adjust_compatible=False`). When `subplots_adjust` is called, it checks `not engine.adjust_compatible` and fires the warning.\n\nThe fix adds a truthiness check \u2014 only create the `ConstrainedLayoutEngine` when `constrained_layout` is truthy. When `constrained_layout=False`, we call `set_layout_engine(layout=None)` which will check `figure.autolayout` and `figure.constrained_layout.use` rcParams, but crucially will use a `TightLayoutEngine` (which has `adjust_compatible=True`) or `None` \u2014 neither of which triggers the warning.",
+  "total_cost_usd": 0.50107315,
+  "num_turns": 8
+}

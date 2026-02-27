@@ -1,8 +1,8 @@
 """Compare results between baseline and comprehend configurations.
 
 Usage:
-    python compare.py results/swebench_lite/baseline/ results/swebench_lite/comprehend/
-    python compare.py results/swe_qa/baseline/ results/swe_qa/comprehend/
+    python compare.py runs/swebench_lite/baseline/results/ runs/swebench_lite/comprehend/results/
+    python compare.py runs/swe_qa/baseline/results/ runs/swe_qa/comprehend/results/
 
 Loads result JSONs from both directories, computes comparative metrics,
 and prints a summary table.

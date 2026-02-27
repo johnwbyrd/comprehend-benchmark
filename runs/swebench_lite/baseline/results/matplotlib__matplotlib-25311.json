@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 857,
+  "git_diff": "diff --git a/lib/matplotlib/figure.py b/lib/matplotlib/figure.py\nindex 10a4072328..8f1b043178 100644\n--- a/lib/matplotlib/figure.py\n+++ b/lib/matplotlib/figure.py\n@@ -3190,6 +3190,30 @@ None}, default: None\n         # re-initialise some of the unstored state information\n         FigureCanvasBase(self)  # Set self.canvas.\n \n+        # Reconnect any DraggableBase-derived objects (e.g. DraggableLegend,\n+        # DraggableAnnotation) to the new canvas.  These objects store a direct\n+        # reference to the canvas which is stripped out during pickling (see\n+        # DraggableBase.__getstate__); we restore it here, after the canvas has\n+        # been set up, by re-registering the necessary callbacks.\n+        from matplotlib.offsetbox import DraggableBase\n+\n+        def reconnect_if_draggable(artist):\n+            draggable = getattr(artist, '_draggable', None)\n+            if isinstance(draggable, DraggableBase):\n+                draggable.canvas = self.canvas\n+                draggable.cids = [\n+                    self.canvas.callbacks._connect_picklable(\n+                        'pick_event', draggable.on_pick),\n+                    self.canvas.callbacks._connect_picklable(\n+                        'button_release_event', draggable.on_release),\n+                ]\n+\n+        for ax in self.axes:\n+            for child in ax.get_children():\n+                reconnect_if_draggable(child)\n+        for legend in self.legends:\n+            reconnect_if_draggable(legend)\n+\n         if restore_to_pylab:\n             # lazy import to avoid circularity\n             import matplotlib.pyplot as plt\ndiff --git a/lib/matplotlib/offsetbox.py b/lib/matplotlib/offsetbox.py\nindex 1dee8a23d9..497282cad9 100644\n--- a/lib/matplotlib/offsetbox.py\n+++ b/lib/matplotlib/offsetbox.py\n@@ -1580,6 +1580,20 @@ class DraggableBase:\n     def finalize_offset(self):\n         pass\n \n+    def __getstate__(self):\n+        state = self.__dict__.copy()\n+        # canvas is not picklable; it will be reconnected after unpickling via\n+        # Figure.__setstate__.\n+        state['canvas'] = None\n+        state['cids'] = []\n+        # got_artist may be True if we are pickling mid-drag; reset it.\n+        state['got_artist'] = False\n+        # background is a renderer buffer, not picklable.\n+        state.pop('background', None)\n+        # _c1 is a temporary callback registered during motion; not needed.\n+        state.pop('_c1', None)\n+        return state\n+\n \n class DraggableOffsetBox(DraggableBase):\n     def __init__(self, ref_artist, offsetbox, use_blit=False):\ndiff --git a/lib/matplotlib/tests/test_pickle.py b/lib/matplotlib/tests/test_pickle.py\nindex ec6bdcc2fe..4b5649b3d1 100644\n--- a/lib/matplotlib/tests/test_pickle.py\n+++ b/lib/matplotlib/tests/test_pickle.py\n@@ -282,3 +282,36 @@ def test_dynamic_norm():\n def test_vertexselector():\n     line, = plt.plot([0, 1], picker=True)\n     pickle.loads(pickle.dumps(VertexSelector(line)))\n+\n+\n+def test_draggable_legend():\n+    fig, ax = plt.subplots()\n+    ax.plot([1, 2, 3], label='test')\n+    leg = ax.legend()\n+    leg.set_draggable(True)\n+\n+    # Pickling must not raise.\n+    buf = BytesIO()\n+    pickle.dump(fig, buf)\n+    buf.seek(0)\n+    fig2 = pickle.load(buf)\n+\n+    # The legend should still be draggable after unpickling.\n+    assert fig2.axes[0].get_legend().get_draggable()\n+    plt.close(fig2)\n+\n+\n+def test_draggable_annotation():\n+    fig, ax = plt.subplots()\n+    ann = ax.annotate('test', xy=(0.5, 0.5))\n+    ann.draggable(True)\n+\n+    # Pickling must not raise.\n+    buf = BytesIO()\n+    pickle.dump(fig, buf)\n+    buf.seek(0)\n+    fig2 = pickle.load(buf)\n+\n+    # The annotation should still be draggable after unpickling.\n+    assert fig2.axes[0].texts[0]._draggable is not None\n+    plt.close(fig2)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 855349,
+    "duration_api_ms": 874498,
+    "num_turns": 81,
+    "result": "The implementation is complete. Here's a summary of what was done:\n\n## Summary\n\n**Root cause**: `DraggableBase.__init__` stores `self.canvas = self.ref_artist.figure.canvas`. The canvas object holds platform-specific state (e.g., a Qt widget) that cannot be pickled. When pickling a figure with a draggable legend, Python traverses all child objects and fails when it reaches this canvas reference.\n\n**Fix \u2014 two-part solution**:\n\n### 1. `lib/matplotlib/offsetbox.py` \u2014 `DraggableBase.__getstate__`\nAdded a `__getstate__` method that strips unpicklable state before pickling:\n- `canvas` \u2192 set to `None` (will be reconnected after unpickling)\n- `cids` \u2192 set to `[]` (callback IDs are invalidated by canvas destruction)\n- `got_artist` \u2192 reset to `False` (in case pickling happens mid-drag)\n- `background` \u2192 removed (renderer buffer, not picklable)\n- `_c1` \u2192 removed (temporary motion callback, not needed)\n\n### 2. `lib/matplotlib/figure.py` \u2014 `Figure.__setstate__`\nAfter `FigureCanvasBase(self)` creates the new canvas, the code walks all axes children and figure-level legends, finding any objects with a `_draggable` attribute that is a `DraggableBase` instance, and re-registers their `pick_event` and `button_release_event` callbacks on the new canvas.\n\n### 3. `lib/matplotlib/tests/test_pickle.py`\nAdded two tests: `test_draggable_legend` and `test_draggable_annotation`, which verify that figures with draggable legends/annotations can be pickled and unpickled, and that the objects remain draggable after unpickling.",
+    "stop_reason": null,
+    "session_id": "56bdf26e-4989-4b41-b567-d92c5ca87f0e",
+    "total_cost_usd": 4.396216799999999,
+    "usage": {
+      "input_tokens": 76,
+      "cache_creation_input_tokens": 71678,
+      "cache_read_input_tokens": 5312586,
+      "output_tokens": 41078,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 71678,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 76,
+        "outputTokens": 41078,
+        "cacheReadInputTokens": 5312586,
+        "cacheCreationInputTokens": 71678,
+        "webSearchRequests": 0,
+        "costUSD": 4.1316105,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 70208,
+        "outputTokens": 7282,
+        "cacheReadInputTokens": 859358,
+        "cacheCreationInputTokens": 57642,
+        "webSearchRequests": 0,
+        "costUSD": 0.2646063,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "625a0ffc-f216-4ce2-86af-626c6825c104"
+  },
+  "session_id": "56bdf26e-4989-4b41-b567-d92c5ca87f0e",
+  "result_text": "The implementation is complete. Here's a summary of what was done:\n\n## Summary\n\n**Root cause**: `DraggableBase.__init__` stores `self.canvas = self.ref_artist.figure.canvas`. The canvas object holds platform-specific state (e.g., a Qt widget) that cannot be pickled. When pickling a figure with a draggable legend, Python traverses all child objects and fails when it reaches this canvas reference.\n\n**Fix \u2014 two-part solution**:\n\n### 1. `lib/matplotlib/offsetbox.py` \u2014 `DraggableBase.__getstate__`\nAdded a `__getstate__` method that strips unpicklable state before pickling:\n- `canvas` \u2192 set to `None` (will be reconnected after unpickling)\n- `cids` \u2192 set to `[]` (callback IDs are invalidated by canvas destruction)\n- `got_artist` \u2192 reset to `False` (in case pickling happens mid-drag)\n- `background` \u2192 removed (renderer buffer, not picklable)\n- `_c1` \u2192 removed (temporary motion callback, not needed)\n\n### 2. `lib/matplotlib/figure.py` \u2014 `Figure.__setstate__`\nAfter `FigureCanvasBase(self)` creates the new canvas, the code walks all axes children and figure-level legends, finding any objects with a `_draggable` attribute that is a `DraggableBase` instance, and re-registers their `pick_event` and `button_release_event` callbacks on the new canvas.\n\n### 3. `lib/matplotlib/tests/test_pickle.py`\nAdded two tests: `test_draggable_legend` and `test_draggable_annotation`, which verify that figures with draggable legends/annotations can be pickled and unpickled, and that the objects remain draggable after unpickling.",
+  "total_cost_usd": 4.396216799999999,
+  "num_turns": 81
+}

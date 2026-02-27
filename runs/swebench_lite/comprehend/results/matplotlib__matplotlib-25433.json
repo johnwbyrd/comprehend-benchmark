@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 578,
+  "git_diff": "diff --git a/lib/matplotlib/figure.py b/lib/matplotlib/figure.py\nindex d2568fddbf..5ffeadb8a6 100644\n--- a/lib/matplotlib/figure.py\n+++ b/lib/matplotlib/figure.py\n@@ -3104,6 +3104,7 @@ None}, default: None\n         toolbar = self.canvas.toolbar\n         if toolbar is not None:\n             toolbar.update()\n+        self.canvas.mouse_grabber = None\n \n     @_finalize_rasterization\n     @allow_rasterization\ndiff --git a/lib/matplotlib/tests/test_widgets.py b/lib/matplotlib/tests/test_widgets.py\nindex 5706df46e3..51a8d38bfc 100644\n--- a/lib/matplotlib/tests/test_widgets.py\n+++ b/lib/matplotlib/tests/test_widgets.py\n@@ -1334,6 +1334,35 @@ def test_range_slider_same_init_values(orientation):\n     assert_allclose(box.get_points().flatten()[idx], [0, 0.25, 0, 0.75])\n \n \n+def test_range_slider_on_changed_callback_with_clf():\n+    # Test that clf() in on_changed callback properly releases canvas\n+    # mouse_grabber (GH#26623)\n+    from matplotlib.testing.widgets import mock_event\n+    fig, ax = plt.subplots()\n+    slider = widgets.RangeSlider(ax=ax, label=\"\", valmin=0, valmax=10,\n+                                 valinit=(1, 9))\n+\n+    def on_changed(val):\n+        fig.clear()\n+\n+    slider.on_changed(on_changed)\n+\n+    # Simulate a press to start drag\n+    press_event = mock_event(ax, button=1, xdata=5, ydata=0.5)\n+    press_event.name = 'button_press_event'\n+    slider._update(press_event)\n+    assert slider.drag_active\n+    assert ax.figure.canvas.mouse_grabber is ax\n+\n+    # Simulate motion that triggers on_changed which calls clf()\n+    move_event = mock_event(ax, button=1, xdata=6, ydata=0.5)\n+    move_event.name = 'motion_notify_event'\n+    slider._update(move_event)\n+\n+    # After clf(), mouse_grabber must be reset to None so new widgets work\n+    assert fig.canvas.mouse_grabber is None\n+\n+\n def check_polygon_selector(event_sequence, expected_result, selections_count,\n                            **kwargs):\n     \"\"\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 575917,
+    "duration_api_ms": 562221,
+    "num_turns": 75,
+    "result": "The fix and test look correct. Let me provide a summary of the changes made:\n\n## Summary\n\n### Root Cause\n\nThe bug occurs in this sequence:\n1. User drags the `RangeSlider` \u2192 `canvas.grab_mouse(slider.ax)` is called, setting `canvas.mouse_grabber = slider.ax`\n2. During drag (on `motion_notify_event`), `set_val()` fires the `on_changed` callback while the mouse is **still grabbed**\n3. The callback calls `clf()` \u2192 figure is cleared, axes are removed, but `canvas.mouse_grabber` **still points to the old (now-removed) axes**\n4. New widgets are created via `addElements()` and redrawn\n5. All future mouse events have `event.inaxes` forced to the **old grabbed axes** (see `LocationEvent._update_enter_leave` which checks `canvas.mouse_grabber`)\n6. New slider's `_update` method sees `event.inaxes != self.ax` on press, never activates\n\n**Why Button works**: `Button._release()` calls `release_mouse()` **before** the callback, so `mouse_grabber` is already `None` when `clf()` is called.\n\n### Fix\n\n**`lib/matplotlib/figure.py`** \u2014 Add `self.canvas.mouse_grabber = None` to `Figure.clear()`:\n\nWhen the figure is cleared (all axes removed), the canvas's mouse grab is unconditionally released. This is semantically correct \u2014 clearing a figure should reset all interactive mouse state, since the axes holding the grab no longer exists in the figure.\n\n### Test\n\n**`lib/matplotlib/tests/test_widgets.py`** \u2014 Added `test_range_slider_on_changed_callback_with_clf()`:\n\nSimulates a press-then-drag on a `RangeSlider` where the `on_changed` callback calls `fig.clear()`, and asserts that `canvas.mouse_grabber` is `None` afterwards (so new widgets created after `clf()` can receive mouse events normally).",
+    "stop_reason": null,
+    "session_id": "edbe6ab1-baec-4d60-b527-80c2f02c6e09",
+    "total_cost_usd": 3.4951835,
+    "usage": {
+      "input_tokens": 77,
+      "cache_creation_input_tokens": 62989,
+      "cache_read_input_tokens": 4537055,
+      "output_tokens": 26094,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 62989,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 77,
+        "outputTokens": 26094,
+        "cacheReadInputTokens": 4537055,
+        "cacheCreationInputTokens": 62989,
+        "webSearchRequests": 0,
+        "costUSD": 3.3149437500000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 53173,
+        "outputTokens": 6992,
+        "cacheReadInputTokens": 588655,
+        "cacheCreationInputTokens": 26593,
+        "webSearchRequests": 0,
+        "costUSD": 0.1802397500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "a3ff526c-8c27-45de-8b57-ce65e465ad79"
+  },
+  "session_id": "edbe6ab1-baec-4d60-b527-80c2f02c6e09",
+  "result_text": "The fix and test look correct. Let me provide a summary of the changes made:\n\n## Summary\n\n### Root Cause\n\nThe bug occurs in this sequence:\n1. User drags the `RangeSlider` \u2192 `canvas.grab_mouse(slider.ax)` is called, setting `canvas.mouse_grabber = slider.ax`\n2. During drag (on `motion_notify_event`), `set_val()` fires the `on_changed` callback while the mouse is **still grabbed**\n3. The callback calls `clf()` \u2192 figure is cleared, axes are removed, but `canvas.mouse_grabber` **still points to the old (now-removed) axes**\n4. New widgets are created via `addElements()` and redrawn\n5. All future mouse events have `event.inaxes` forced to the **old grabbed axes** (see `LocationEvent._update_enter_leave` which checks `canvas.mouse_grabber`)\n6. New slider's `_update` method sees `event.inaxes != self.ax` on press, never activates\n\n**Why Button works**: `Button._release()` calls `release_mouse()` **before** the callback, so `mouse_grabber` is already `None` when `clf()` is called.\n\n### Fix\n\n**`lib/matplotlib/figure.py`** \u2014 Add `self.canvas.mouse_grabber = None` to `Figure.clear()`:\n\nWhen the figure is cleared (all axes removed), the canvas's mouse grab is unconditionally released. This is semantically correct \u2014 clearing a figure should reset all interactive mouse state, since the axes holding the grab no longer exists in the figure.\n\n### Test\n\n**`lib/matplotlib/tests/test_widgets.py`** \u2014 Added `test_range_slider_on_changed_callback_with_clf()`:\n\nSimulates a press-then-drag on a `RangeSlider` where the `on_changed` callback calls `fig.clear()`, and asserts that `canvas.mouse_grabber` is `None` afterwards (so new widgets created after `clf()` can receive mouse events normally).",
+  "total_cost_usd": 3.4951835,
+  "num_turns": 75
+}

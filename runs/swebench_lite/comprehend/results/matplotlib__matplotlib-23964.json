@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 61,
+  "git_diff": "diff --git a/lib/matplotlib/backends/backend_ps.py b/lib/matplotlib/backends/backend_ps.py\nindex f209e811f1..bd996b7509 100644\n--- a/lib/matplotlib/backends/backend_ps.py\n+++ b/lib/matplotlib/backends/backend_ps.py\n@@ -666,7 +666,8 @@ grestore\n                     (item.x, item.ft_object.get_glyph_name(item.glyph_idx))\n                 )\n             # append the last entry\n-            stream.append(curr_stream)\n+            if curr_stream:\n+                stream.append(curr_stream)\n \n         self.set_color(*gc.get_rgb())\n \ndiff --git a/lib/matplotlib/tests/test_backend_ps.py b/lib/matplotlib/tests/test_backend_ps.py\nindex fc2556a47d..4361357e4e 100644\n--- a/lib/matplotlib/tests/test_backend_ps.py\n+++ b/lib/matplotlib/tests/test_backend_ps.py\n@@ -256,6 +256,16 @@ def test_linedash():\n     assert buf.tell() > 0\n \n \n+def test_empty_line():\n+    # Regression test for GH#24723 - empty lines in multi-line text caused\n+    # TypeError in PostScript backend.\n+    fig = Figure()\n+    ax = fig.add_subplot(111)\n+    ax.annotate(text='\\nLower label', xy=(0, 0))\n+    buf = io.BytesIO()\n+    fig.savefig(buf, format='eps')  # Should not raise.\n+\n+\n def test_no_duplicate_definition():\n \n     fig = Figure()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 58718,
+    "duration_api_ms": 63585,
+    "num_turns": 16,
+    "result": "The fix is minimal and correct. Here's a summary of the issue and the fix:\n\n**Root cause:** In `backend_ps.py`'s `draw_text` method, when rendering a TTF font, the code builds a `stream` list from items produced by `_text_helpers.layout(s, font)`. When `s` is an empty string (which occurs when a multi-line text label has an empty line), `layout()` yields no items, so `curr_stream` remains `None`. The unconditional `stream.append(curr_stream)` at line 669 then appended `None` to `stream`, causing the `TypeError: cannot unpack non-iterable NoneType object` when the code tried to iterate `for ps_name, xs_names in stream`.\n\n**Fix:** Added a `if curr_stream:` guard before the final `stream.append(curr_stream)` call (line 669), which mirrors the identical guard already present inside the loop at line 661. This matches the suggested fix from the bug report.",
+    "stop_reason": null,
+    "session_id": "5d17c81f-e5c2-4a2a-9b85-c6cf6e3994ff",
+    "total_cost_usd": 0.39732249999999997,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 14204,
+      "cache_read_input_tokens": 465239,
+      "output_tokens": 2509,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 14204,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 2509,
+        "cacheReadInputTokens": 465239,
+        "cacheCreationInputTokens": 14204,
+        "webSearchRequests": 0,
+        "costUSD": 0.3842095,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 12158,
+        "outputTokens": 191,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.013112999999999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "62ba46b7-bfae-41cb-99be-8b760be0c9b4"
+  },
+  "session_id": "5d17c81f-e5c2-4a2a-9b85-c6cf6e3994ff",
+  "result_text": "The fix is minimal and correct. Here's a summary of the issue and the fix:\n\n**Root cause:** In `backend_ps.py`'s `draw_text` method, when rendering a TTF font, the code builds a `stream` list from items produced by `_text_helpers.layout(s, font)`. When `s` is an empty string (which occurs when a multi-line text label has an empty line), `layout()` yields no items, so `curr_stream` remains `None`. The unconditional `stream.append(curr_stream)` at line 669 then appended `None` to `stream`, causing the `TypeError: cannot unpack non-iterable NoneType object` when the code tried to iterate `for ps_name, xs_names in stream`.\n\n**Fix:** Added a `if curr_stream:` guard before the final `stream.append(curr_stream)` call (line 669), which mirrors the identical guard already present inside the loop at line 661. This matches the suggested fix from the bug report.",
+  "total_cost_usd": 0.39732249999999997,
+  "num_turns": 16
+}

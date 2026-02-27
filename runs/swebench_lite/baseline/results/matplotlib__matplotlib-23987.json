@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 206,
+  "git_diff": "diff --git a/lib/matplotlib/figure.py b/lib/matplotlib/figure.py\nindex 5bbb786984..c1368b6dfc 100644\n--- a/lib/matplotlib/figure.py\n+++ b/lib/matplotlib/figure.py\n@@ -2426,9 +2426,12 @@ class Figure(FigureBase):\n             if isinstance(tight_layout, dict):\n                 self.get_layout_engine().set(**tight_layout)\n         elif constrained_layout is not None:\n-            self.set_layout_engine(layout='constrained')\n-            if isinstance(constrained_layout, dict):\n-                self.get_layout_engine().set(**constrained_layout)\n+            if constrained_layout:\n+                self.set_layout_engine(layout='constrained')\n+                if isinstance(constrained_layout, dict):\n+                    self.get_layout_engine().set(**constrained_layout)\n+            else:\n+                self.set_layout_engine(layout='none')\n         else:\n             # everything is None, so use default:\n             self.set_layout_engine(layout=layout)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 203528,
+    "duration_api_ms": 198647,
+    "num_turns": 15,
+    "result": "The fix is correct. Here's the complete analysis:\n\n**Root cause:** In `Figure.__init__()`, the condition `elif constrained_layout is not None:` evaluates to `True` even when `constrained_layout=False` (since `False is not None` is `True`). This caused `set_layout_engine(layout='constrained')` to be called, installing a `ConstrainedLayoutEngine` (which has `_adjust_compatible = False`). When `subplots_adjust()` was later called, it checked `not self.get_layout_engine().adjust_compatible` \u2192 `True`, triggering the spurious warning.\n\n**Fix:** Added an inner check `if constrained_layout:` so that:\n- `constrained_layout=True` (or a dict) \u2192 sets `ConstrainedLayoutEngine` (correct, existing behavior)\n- `constrained_layout=False` \u2192 calls `set_layout_engine('none')` which results in `self._layout_engine = None` (since no prior engine exists in `__init__`)\n- `subplots_adjust()` then skips the warning because `self.get_layout_engine() is not None` is `False`",
+    "stop_reason": null,
+    "session_id": "9729496e-3908-459e-abbf-d4286e947fd7",
+    "total_cost_usd": 0.7338044000000002,
+    "usage": {
+      "input_tokens": 17,
+      "cache_creation_input_tokens": 17535,
+      "cache_read_input_tokens": 453736,
+      "output_tokens": 7724,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 17535,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 17,
+        "outputTokens": 7724,
+        "cacheReadInputTokens": 453736,
+        "cacheCreationInputTokens": 17535,
+        "webSearchRequests": 0,
+        "costUSD": 0.52964675,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 26247,
+        "outputTokens": 6288,
+        "cacheReadInputTokens": 1024294,
+        "cacheCreationInputTokens": 35233,
+        "webSearchRequests": 0,
+        "costUSD": 0.20415765,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "fd666225-7e97-4959-89b6-12df7a3c659c"
+  },
+  "session_id": "9729496e-3908-459e-abbf-d4286e947fd7",
+  "result_text": "The fix is correct. Here's the complete analysis:\n\n**Root cause:** In `Figure.__init__()`, the condition `elif constrained_layout is not None:` evaluates to `True` even when `constrained_layout=False` (since `False is not None` is `True`). This caused `set_layout_engine(layout='constrained')` to be called, installing a `ConstrainedLayoutEngine` (which has `_adjust_compatible = False`). When `subplots_adjust()` was later called, it checked `not self.get_layout_engine().adjust_compatible` \u2192 `True`, triggering the spurious warning.\n\n**Fix:** Added an inner check `if constrained_layout:` so that:\n- `constrained_layout=True` (or a dict) \u2192 sets `ConstrainedLayoutEngine` (correct, existing behavior)\n- `constrained_layout=False` \u2192 calls `set_layout_engine('none')` which results in `self._layout_engine = None` (since no prior engine exists in `__init__`)\n- `subplots_adjust()` then skips the warning because `self.get_layout_engine() is not None` is `False`",
+  "total_cost_usd": 0.7338044000000002,
+  "num_turns": 15
+}

@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 20,
+  "git_diff": "diff --git a/lib/matplotlib/backends/backend_ps.py b/lib/matplotlib/backends/backend_ps.py\nindex f209e811f1..bd996b7509 100644\n--- a/lib/matplotlib/backends/backend_ps.py\n+++ b/lib/matplotlib/backends/backend_ps.py\n@@ -666,7 +666,8 @@ grestore\n                     (item.x, item.ft_object.get_glyph_name(item.glyph_idx))\n                 )\n             # append the last entry\n-            stream.append(curr_stream)\n+            if curr_stream:\n+                stream.append(curr_stream)\n \n         self.set_color(*gc.get_rgb())\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 17274,
+    "duration_api_ms": 17054,
+    "num_turns": 3,
+    "result": "The fix mirrors the guard already used on line 661 (`if curr_stream: stream.append(curr_stream)`) for intermediate entries. The root cause: when a text line is empty, `_text_helpers.layout(s, font)` yields nothing, leaving `curr_stream = None`. The unconditional `stream.append(curr_stream)` at line 669 then added `None` to the stream, which caused the unpack error at line 673.",
+    "stop_reason": null,
+    "session_id": "f8e133f3-a63a-4b64-8b85-d1c45236a3fb",
+    "total_cost_usd": 0.09702725,
+    "usage": {
+      "input_tokens": 5,
+      "cache_creation_input_tokens": 7543,
+      "cache_read_input_tokens": 70067,
+      "output_tokens": 593,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 7543,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 5,
+        "outputTokens": 593,
+        "cacheReadInputTokens": 70067,
+        "cacheCreationInputTokens": 7543,
+        "webSearchRequests": 0,
+        "costUSD": 0.09702725,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "0175a6ef-7238-49b8-8087-9600037f96b1"
+  },
+  "session_id": "f8e133f3-a63a-4b64-8b85-d1c45236a3fb",
+  "result_text": "The fix mirrors the guard already used on line 661 (`if curr_stream: stream.append(curr_stream)`) for intermediate entries. The root cause: when a text line is empty, `_text_helpers.layout(s, font)` yields nothing, leaving `curr_stream = None`. The unconditional `stream.append(curr_stream)` at line 669 then added `None` to the stream, which caused the unpack error at line 673.",
+  "total_cost_usd": 0.09702725,
+  "num_turns": 3
+}

@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 157,
+  "git_diff": "diff --git a/seaborn/_core/scales.py b/seaborn/_core/scales.py\nindex 6c9ecbc9..c18ab88c 100644\n--- a/seaborn/_core/scales.py\n+++ b/seaborn/_core/scales.py\n@@ -347,8 +347,8 @@ class ContinuousBase(Scale):\n             else:\n                 vmin, vmax = new.norm\n             vmin, vmax = axis.convert_units((vmin, vmax))\n-            a = forward(vmin)\n-            b = forward(vmax) - forward(vmin)\n+            a = forward(float(vmin))\n+            b = forward(float(vmax)) - forward(float(vmin))\n \n             def normalize(x):\n                 return (x - a) / b\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 155247,
+    "duration_api_ms": 156540,
+    "num_turns": 34,
+    "result": "All tests pass (except the pre-existing `test_tick_minor` failure). The fix is clean and correct.\n\n## Summary\n\nThe bug was in `seaborn/_core/scales.py` at line 351, in `ContinuousBase._setup()`.\n\n**Root cause:** When boolean data is passed as a color mapping, `data.min()` and `data.max()` return numpy boolean scalars (`np.bool_(False)` and `np.bool_(True)`). The `forward` function (identity transform by default) passes them through unchanged. Then `forward(vmax) - forward(vmin)` = `np.bool_(True) - np.bool_(False)` triggers numpy's TypeError since boolean subtraction is not supported.\n\n**Fix:** Cast `vmin` and `vmax` to `float` before passing them to `forward`, so the subtraction is always done on numeric values:\n\n```python\na = forward(float(vmin))\nb = forward(float(vmax)) - forward(float(vmin))\n```\n\nThis also ensures the `normalize` closure's `a` and `b` are floats, which allows the `(x - a) / b` operation to work correctly even when `x` is a boolean array (numpy upcasts booleans to float when doing arithmetic with float scalars).",
+    "stop_reason": null,
+    "session_id": "8546f41e-e617-42bd-a98a-6f6e501a3203",
+    "total_cost_usd": 0.83760225,
+    "usage": {
+      "input_tokens": 36,
+      "cache_creation_input_tokens": 17275,
+      "cache_read_input_tokens": 1044013,
+      "output_tokens": 7147,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 17275,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 36,
+        "outputTokens": 7147,
+        "cacheReadInputTokens": 1044013,
+        "cacheCreationInputTokens": 17275,
+        "webSearchRequests": 0,
+        "costUSD": 0.8088302499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 24147,
+        "outputTokens": 925,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.028772000000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "5a4ff9a4-072a-4d70-b4c1-6b696f40c076"
+  },
+  "session_id": "8546f41e-e617-42bd-a98a-6f6e501a3203",
+  "result_text": "All tests pass (except the pre-existing `test_tick_minor` failure). The fix is clean and correct.\n\n## Summary\n\nThe bug was in `seaborn/_core/scales.py` at line 351, in `ContinuousBase._setup()`.\n\n**Root cause:** When boolean data is passed as a color mapping, `data.min()` and `data.max()` return numpy boolean scalars (`np.bool_(False)` and `np.bool_(True)`). The `forward` function (identity transform by default) passes them through unchanged. Then `forward(vmax) - forward(vmin)` = `np.bool_(True) - np.bool_(False)` triggers numpy's TypeError since boolean subtraction is not supported.\n\n**Fix:** Cast `vmin` and `vmax` to `float` before passing them to `forward`, so the subtraction is always done on numeric values:\n\n```python\na = forward(float(vmin))\nb = forward(float(vmax)) - forward(float(vmin))\n```\n\nThis also ensures the `normalize` closure's `a` and `b` are floats, which allows the `(x - a) / b` operation to work correctly even when `x` is a boolean array (numpy upcasts booleans to float when doing arithmetic with float scalars).",
+  "total_cost_usd": 0.83760225,
+  "num_turns": 34
+}

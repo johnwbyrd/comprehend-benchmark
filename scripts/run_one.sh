@@ -3,13 +3,14 @@
 # Run a single task with Claude Code headless and capture results.
 #
 # Usage:
-#   run_one.sh <config_json> <repo_dir> <prompt_file> <output_json>
+#   run_one.sh <config_json> <repo_dir> <prompt_file> <output_json> [transcript_dir]
 #
 # Arguments:
-#   config_json  - Path to configs/baseline.json or configs/comprehend.json
-#   repo_dir     - Path to the git repository (already checked out at the right commit)
-#   prompt_file  - Path to a file containing the task prompt
-#   output_json  - Path to write the combined result JSON
+#   config_json    - Path to configs/baseline.json or configs/comprehend.json
+#   repo_dir       - Path to the git repository (already checked out at the right commit)
+#   prompt_file    - Path to a file containing the task prompt
+#   output_json    - Path to write the combined result JSON
+#   transcript_dir - (Optional) Directory to copy the session transcript into
 #
 # Prerequisites:
 #   - claude CLI on PATH with ANTHROPIC_API_KEY set
@@ -34,8 +35,8 @@ else
     exit 1
 fi
 
-if [ $# -ne 4 ]; then
-    echo "Usage: $0 <config_json> <repo_dir> <prompt_file> <output_json>"
+if [ $# -lt 4 ] || [ $# -gt 5 ]; then
+    echo "Usage: $0 <config_json> <repo_dir> <prompt_file> <output_json> [transcript_dir]"
     exit 1
 fi
 
@@ -43,6 +44,7 @@ CONFIG_JSON="$1"
 REPO_DIR="$2"
 PROMPT_FILE="$3"
 OUTPUT_JSON="$4"
+TRANSCRIPT_DIR="${5:-}"
 
 # --- Parse config with Python (no jq dependency) ---
 read_config() {
@@ -155,3 +157,32 @@ with open(output_path, "w") as f:
 
 print(f"Done: {wall_time}s, saved to {output_path}")
 PYEOF
+
+# --- Copy session transcript if transcript_dir is set ---
+if [ -n "$TRANSCRIPT_DIR" ]; then
+    SESSION_ID=$($PYTHON -c "import json; d=json.load(open('$OUTPUT_JSON')); print(d.get('session_id',''))")
+    if [ -n "$SESSION_ID" ]; then
+        # Claude Code projects dir: absolute repo path with / and _ replaced by -
+        CLAUDE_PROJ_NAME=$(echo "$REPO_DIR" | sed 's|[/_]|-|g')
+        CLAUDE_PROJ_DIR="$HOME/.claude/projects/$CLAUDE_PROJ_NAME"
+        INSTANCE_ID=$(basename "$OUTPUT_JSON" .json)
+
+        mkdir -p "$TRANSCRIPT_DIR"
+
+        # Copy main transcript
+        if [ -f "$CLAUDE_PROJ_DIR/$SESSION_ID.jsonl" ]; then
+            cp "$CLAUDE_PROJ_DIR/$SESSION_ID.jsonl" "$TRANSCRIPT_DIR/$INSTANCE_ID.jsonl"
+            echo "Transcript saved: $TRANSCRIPT_DIR/$INSTANCE_ID.jsonl"
+        else
+            echo "WARNING: transcript not found at $CLAUDE_PROJ_DIR/$SESSION_ID.jsonl"
+        fi
+
+        # Copy subagent directory if it exists
+        if [ -d "$CLAUDE_PROJ_DIR/$SESSION_ID" ]; then
+            cp -r "$CLAUDE_PROJ_DIR/$SESSION_ID" "$TRANSCRIPT_DIR/$INSTANCE_ID"
+            echo "Subagent data saved: $TRANSCRIPT_DIR/$INSTANCE_ID/"
+        fi
+    else
+        echo "WARNING: no session_id in result, cannot capture transcript"
+    fi
+fi

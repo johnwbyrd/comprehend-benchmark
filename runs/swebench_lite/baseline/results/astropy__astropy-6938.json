@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 128,
+  "git_diff": "diff --git a/astropy/io/fits/fitsrec.py b/astropy/io/fits/fitsrec.py\nindex 574b4073b1..11f8c608e5 100644\n--- a/astropy/io/fits/fitsrec.py\n+++ b/astropy/io/fits/fitsrec.py\n@@ -1261,7 +1261,8 @@ class FITS_rec(np.recarray):\n \n         # Replace exponent separator in floating point numbers\n         if 'D' in format:\n-            output_field.replace(encode_ascii('E'), encode_ascii('D'))\n+            output_field[:] = output_field.replace(encode_ascii('E'),\n+                                                   encode_ascii('D'))\n \n \n def _get_recarray_field(array, key):\ndiff --git a/astropy/io/fits/tests/test_table.py b/astropy/io/fits/tests/test_table.py\nindex 67fe21aa72..6dbce9e45f 100644\n--- a/astropy/io/fits/tests/test_table.py\n+++ b/astropy/io/fits/tests/test_table.py\n@@ -2841,6 +2841,27 @@ class TestColumnFunctions(FitsTestCase):\n             raw = np.rec.recarray.field(hdul[1].data, 'TEST')\n             assert raw.tostring() == b'   1.   2.   3.'\n \n+    def test_d_exponent_ascii_column(self):\n+        \"\"\"\n+        Regression test for https://github.com/astropy/astropy/issues/6963\n+\n+        Ensure that D-format columns in ASCII tables write the exponent\n+        separator as 'D' rather than 'E'.\n+        \"\"\"\n+\n+        c = fits.Column('TEST', 'D25.17', array=[1.0, 2.0**100])\n+        t = fits.TableHDU.from_columns([c])\n+        t.writeto(self.temp('test.fits'))\n+\n+        with fits.open(self.temp('test.fits')) as hdul:\n+            assert hdul[1].header['TFORM1'] == 'D25.17'\n+            assert np.all(hdul[1].data['TEST'] == [1.0, 2.0**100])\n+\n+            # Check that the raw data uses 'D' as the exponent separator\n+            raw = np.rec.recarray.field(hdul[1].data, 'TEST')\n+            assert b'E' not in raw.tostring()\n+            assert b'D' in raw.tostring()\n+\n     def test_column_array_type_mismatch(self):\n         \"\"\"Regression test for https://aeon.stsci.edu/ssb/trac/pyfits/ticket/218\"\"\"\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 9154,
+    "duration_api_ms": 133387,
+    "num_turns": 2,
+    "result": "Same environment issue \u2014 `distutils` was removed in Python 3.12 and the shell's active Python is 3.13, which is incompatible with this older astropy codebase. Both failures are purely due to the environment, not the fix.\n\nThe changes made are correct:\n\n1. **`astropy/io/fits/fitsrec.py`** \u2014 one-line fix assigning the result back:\n   ```python\n   # Before (broken \u2014 result discarded):\n   output_field.replace(encode_ascii('E'), encode_ascii('D'))\n\n   # After (correct):\n   output_field[:] = output_field.replace(encode_ascii('E'), encode_ascii('D'))\n   ```\n\n2. **`astropy/io/fits/tests/test_table.py`** \u2014 new regression test `test_d_exponent_ascii_column` that writes a `D25.17` ASCII column and checks the raw bytes contain `D` (not `E`) as the exponent separator.",
+    "stop_reason": null,
+    "session_id": "1e56b17f-13de-4fb0-b911-ab8de14bd7eb",
+    "total_cost_usd": 0.7231905000000001,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 955,
+      "cache_read_input_tokens": 80249,
+      "output_tokens": 351,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 955,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 32,
+        "outputTokens": 6032,
+        "cacheReadInputTokens": 839342,
+        "cacheCreationInputTokens": 21934,
+        "webSearchRequests": 0,
+        "costUSD": 0.7077185000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 13352,
+        "outputTokens": 424,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.015472,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "422d171f-b61d-45cc-8fea-c7e4eab152d6"
+  },
+  "session_id": "1e56b17f-13de-4fb0-b911-ab8de14bd7eb",
+  "result_text": "Same environment issue \u2014 `distutils` was removed in Python 3.12 and the shell's active Python is 3.13, which is incompatible with this older astropy codebase. Both failures are purely due to the environment, not the fix.\n\nThe changes made are correct:\n\n1. **`astropy/io/fits/fitsrec.py`** \u2014 one-line fix assigning the result back:\n   ```python\n   # Before (broken \u2014 result discarded):\n   output_field.replace(encode_ascii('E'), encode_ascii('D'))\n\n   # After (correct):\n   output_field[:] = output_field.replace(encode_ascii('E'), encode_ascii('D'))\n   ```\n\n2. **`astropy/io/fits/tests/test_table.py`** \u2014 new regression test `test_d_exponent_ascii_column` that writes a `D25.17` ASCII column and checks the raw bytes contain `D` (not `E`) as the exponent separator.",
+  "total_cost_usd": 0.7231905000000001,
+  "num_turns": 2
+}

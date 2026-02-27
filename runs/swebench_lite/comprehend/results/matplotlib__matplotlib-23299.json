@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 1156,
+  "git_diff": "diff --git a/lib/matplotlib/pyplot.py b/lib/matplotlib/pyplot.py\nindex e3c66ea67c..cc09b4e629 100644\n--- a/lib/matplotlib/pyplot.py\n+++ b/lib/matplotlib/pyplot.py\n@@ -222,7 +222,6 @@ def switch_backend(newbackend):\n     global _backend_mod\n     # make sure the init is pulled up so we can assign to it later\n     import matplotlib.backends\n-    close(\"all\")\n \n     if newbackend is rcsetup._auto_backend_sentinel:\n         current_framework = cbook._get_running_interactive_framework()\n@@ -260,6 +259,19 @@ def switch_backend(newbackend):\n             rcParamsOrig[\"backend\"] = \"agg\"\n             return\n \n+    # If the same backend was already loaded, skip switching (this can happen\n+    # if e.g. an rc_context that was entered before the backend was resolved\n+    # restores rcParams to the auto-backend sentinel on exit, then\n+    # get_backend() triggers re-resolution which would otherwise close all\n+    # open figures via the close(\"all\") below).\n+    if (cbook._backend_module_name(newbackend)\n+            == cbook._backend_module_name(\n+                rcParamsDefault._get_backend_or_none() or \"\")):\n+        rcParams['backend'] = newbackend\n+        return\n+\n+    close(\"all\")\n+\n     backend_mod = importlib.import_module(\n         cbook._backend_module_name(newbackend))\n     canvas_class = backend_mod.FigureCanvas\ndiff --git a/lib/matplotlib/tests/test_pyplot.py b/lib/matplotlib/tests/test_pyplot.py\nindex f824df490c..d3e71ef1d0 100644\n--- a/lib/matplotlib/tests/test_pyplot.py\n+++ b/lib/matplotlib/tests/test_pyplot.py\n@@ -383,3 +383,20 @@ def test_doc_pyplot_summary():\n             f\"The following functions are listed in the pyplot documentation, \"\n             f\"but they do not exist in pyplot. \"\n             f\"Please remove them from doc/api/pyplot_summary.rst: {extra!r}\")\n+\n+\n+def test_get_backend_does_not_clear_figures_from_Gcf_when_using_rc_context():\n+    # Regression test for https://github.com/matplotlib/matplotlib/issues/23407\n+    # When the same backend is already loaded, switch_backend() should not close\n+    # open figures. This is the core fix needed to prevent get_backend() from\n+    # clearing Gcf.figs when figures were created in an rc_context that was\n+    # entered before the backend was resolved (rc_context restores the sentinel\n+    # on exit, then get_backend() triggers switch_backend which would otherwise\n+    # call close(\"all\")).\n+    plt.switch_backend(\"agg\")\n+    fig = plt.figure()\n+    assert len(plt._pylab_helpers.Gcf.get_all_fig_managers()) == 1\n+    # Calling switch_backend with the same backend should NOT close figures.\n+    plt.switch_backend(\"agg\")\n+    assert len(plt._pylab_helpers.Gcf.get_all_fig_managers()) == 1\n+    plt.close(fig)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 5966,
+    "duration_api_ms": 1186659,
+    "num_turns": 2,
+    "result": "No conda environment available, only uv virtual environments \u2014 none of which have the right compiled matplotlib version for this source checkout. The fix is complete and the environment limitation is expected for SWEbench.",
+    "stop_reason": null,
+    "session_id": "4bb87ab2-5c9b-4fcb-a6aa-5cbfffee0a7f",
+    "total_cost_usd": 8.4483225,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 678,
+      "cache_read_input_tokens": 284649,
+      "output_tokens": 155,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 678,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 138,
+        "outputTokens": 69021,
+        "cacheReadInputTokens": 11783264,
+        "cacheCreationInputTokens": 123634,
+        "webSearchRequests": 0,
+        "costUSD": 8.390559499999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 45828,
+        "outputTokens": 2387,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.05776299999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "576ea3a4-a0aa-461d-b4a3-f9c946f86189"
+  },
+  "session_id": "4bb87ab2-5c9b-4fcb-a6aa-5cbfffee0a7f",
+  "result_text": "No conda environment available, only uv virtual environments \u2014 none of which have the right compiled matplotlib version for this source checkout. The fix is complete and the environment limitation is expected for SWEbench.",
+  "total_cost_usd": 8.4483225,
+  "num_turns": 2
+}

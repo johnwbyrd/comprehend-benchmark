@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 139,
+  "git_diff": "diff --git a/astropy/wcs/wcs.py b/astropy/wcs/wcs.py\nindex d3a06f2b31..90106fa40b 100644\n--- a/astropy/wcs/wcs.py\n+++ b/astropy/wcs/wcs.py\n@@ -1220,6 +1220,11 @@ reduce these to 2 dimensions using the naxis kwarg.\n \n             xy = np.hstack([x.reshape((x.size, 1)) for x in axes])\n \n+            if xy.shape[0] == 0:\n+                if ra_dec_order and sky == 'output':\n+                    return (axes[0], axes[1])\n+                return [axes[0] for _ in range(self.naxis)]\n+\n             if ra_dec_order and sky == 'input':\n                 xy = self._denormalize_sky(xy)\n             output = func(xy, origin)\n@@ -1235,6 +1240,8 @@ reduce these to 2 dimensions using the naxis kwarg.\n                 raise ValueError(\n                     \"When providing two arguments, the array must be \"\n                     \"of shape (N, {0})\".format(self.naxis))\n+            if 0 in xy.shape:\n+                return np.zeros((0, self.naxis))\n             if ra_dec_order and sky == 'input':\n                 xy = self._denormalize_sky(xy)\n             result = func(xy, origin)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 136487,
+    "duration_api_ms": 141759,
+    "num_turns": 18,
+    "result": "The fix is clean and correct. Here's a summary of the changes made:\n\n**Problem:** When empty lists/arrays are passed to WCS transformation methods like `wcs_pix2world`, the code builds an empty `xy` array of shape `(0, naxis)` and passes it to wcslib's C function (`p2s`), which doesn't handle zero-length coordinate arrays and raises `InconsistentAxisTypesError`.\n\n**Fix in `_return_list_of_arrays`** (lines 1223\u20131226): After building `xy`, check if it has zero rows. If so, return the empty input arrays directly (as a tuple for `ra_dec_order` output mode, or as a list matching `naxis` for the normal case), without ever calling `func`.\n\n**Fix in `_return_single_array`** (lines 1243\u20131244): After validating the shape, check if any dimension is 0. If so, return an empty `(0, naxis)` array directly.\n\nThese early-return paths bypass the wcslib call for empty inputs, matching the natural expectation that transforming zero coordinates produces zero output coordinates.",
+    "stop_reason": null,
+    "session_id": "c9ef8635-7b3c-4587-941b-614c3163b283",
+    "total_cost_usd": 0.6596687499999999,
+    "usage": {
+      "input_tokens": 20,
+      "cache_creation_input_tokens": 20707,
+      "cache_read_input_tokens": 590770,
+      "output_tokens": 8579,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 20707,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 20,
+        "outputTokens": 8579,
+        "cacheReadInputTokens": 590770,
+        "cacheCreationInputTokens": 20707,
+        "webSearchRequests": 0,
+        "costUSD": 0.63937875,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 17500,
+        "outputTokens": 558,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.02029,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "eb626853-808b-43c7-aa4d-891b0a45119f"
+  },
+  "session_id": "c9ef8635-7b3c-4587-941b-614c3163b283",
+  "result_text": "The fix is clean and correct. Here's a summary of the changes made:\n\n**Problem:** When empty lists/arrays are passed to WCS transformation methods like `wcs_pix2world`, the code builds an empty `xy` array of shape `(0, naxis)` and passes it to wcslib's C function (`p2s`), which doesn't handle zero-length coordinate arrays and raises `InconsistentAxisTypesError`.\n\n**Fix in `_return_list_of_arrays`** (lines 1223\u20131226): After building `xy`, check if it has zero rows. If so, return the empty input arrays directly (as a tuple for `ra_dec_order` output mode, or as a list matching `naxis` for the normal case), without ever calling `func`.\n\n**Fix in `_return_single_array`** (lines 1243\u20131244): After validating the shape, check if any dimension is 0. If so, return an empty `(0, naxis)` array directly.\n\nThese early-return paths bypass the wcslib call for empty inputs, matching the natural expectation that transforming zero coordinates produces zero output coordinates.",
+  "total_cost_usd": 0.6596687499999999,
+  "num_turns": 18
+}

@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 458,
+  "git_diff": "diff --git a/sphinx/ext/autodoc/importer.py b/sphinx/ext/autodoc/importer.py\nindex 477aae247..d3cc555fa 100644\n--- a/sphinx/ext/autodoc/importer.py\n+++ b/sphinx/ext/autodoc/importer.py\n@@ -307,9 +307,12 @@ def get_class_members(subject: Any, objpath: List[str], attrgetter: Callable\n                 analyzer = ModuleAnalyzer.for_module(modname)\n                 analyzer.analyze()\n                 for (ns, name), docstring in analyzer.attr_docs.items():\n-                    if ns == qualname and name not in members:\n-                        members[name] = ObjectMember(name, INSTANCEATTR, class_=cls,\n-                                                     docstring='\\n'.join(docstring))\n+                    if ns == qualname:\n+                        if name not in members:\n+                            members[name] = ObjectMember(name, INSTANCEATTR, class_=cls,\n+                                                         docstring='\\n'.join(docstring))\n+                        elif members[name].docstring is None:\n+                            members[name].docstring = '\\n'.join(docstring)\n             except (AttributeError, PycodeError):\n                 pass\n     except AttributeError:\ndiff --git a/tests/roots/test-ext-autodoc/target/inheritance.py b/tests/roots/test-ext-autodoc/target/inheritance.py\nindex ffac84bb6..8609f3833 100644\n--- a/tests/roots/test-ext-autodoc/target/inheritance.py\n+++ b/tests/roots/test-ext-autodoc/target/inheritance.py\n@@ -15,3 +15,12 @@ class Derived(Base):\n     def inheritedmeth(self):\n         # no docstring here\n         pass\n+\n+\n+class Foo:\n+    #: docstring\n+    attr: int\n+\n+\n+class Bar(Foo):\n+    pass\ndiff --git a/tests/test_ext_autodoc.py b/tests/test_ext_autodoc.py\nindex d555359cf..f04b2260f 100644\n--- a/tests/test_ext_autodoc.py\n+++ b/tests/test_ext_autodoc.py\n@@ -625,6 +625,14 @@ def test_autodoc_inherited_members(app):\n     ]\n \n \n+@pytest.mark.sphinx('html', testroot='ext-autodoc')\n+def test_autodoc_inherited_members_with_annotations(app):\n+    options = {\"members\": None,\n+               \"inherited-members\": None}\n+    actual = do_autodoc(app, 'class', 'target.inheritance.Bar', options)\n+    assert '   .. py:attribute:: Bar.attr' in actual\n+\n+\n @pytest.mark.sphinx('html', testroot='ext-autodoc')\n def test_autodoc_inherited_members_Base(app):\n     options = {\"members\": None,\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 455197,
+    "duration_api_ms": 449440,
+    "num_turns": 52,
+    "result": "The fix is clean and minimal. Here's a summary of what was done:\n\n## Root Cause\n\nIn `sphinx/ext/autodoc/importer.py`, `get_class_members()` processes a class's MRO to collect members. For annotation-only members (e.g., `attr1: int`), the code has two separate steps:\n\n1. **Lines 297-301**: Scans `__annotations__` for each class in the MRO and adds annotation-only members to `members` **without a docstring**\n2. **Lines 303-313**: Loads the module's `ModuleAnalyzer` to find inline `#:` docstring comments \u2014 but only creates `ObjectMember` entries if `name not in members`\n\nSince the annotation scan (step 1) runs first and adds the member without a docstring, the docstring scan (step 2) skips it due to the `name not in members` guard. The `ObjectMember` is left with `docstring=None`.\n\nIn `filter_members()`, since the inherited annotation-only member has no docstring AND `('Bar', 'attr1')` is not in `attr_docs` (only `('Foo', 'attr1')` is), the member is treated as undocumented and excluded.\n\n## Fix\n\nAdded an `elif members[name].docstring is None` branch: when the analyzer finds a docstring for a member that was already added via annotation without a docstring, it updates the docstring. This correctly handles the case where `Foo.attr1` gets its `#:` comment docstring attached even when inherited by `Bar`.",
+    "stop_reason": null,
+    "session_id": "62654c59-c429-4b81-9fed-9ab8f653eaea",
+    "total_cost_usd": 1.9199778,
+    "usage": {
+      "input_tokens": 54,
+      "cache_creation_input_tokens": 37484,
+      "cache_read_input_tokens": 2212609,
+      "output_tokens": 16483,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 37484,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 54,
+        "outputTokens": 16483,
+        "cacheReadInputTokens": 2212609,
+        "cacheCreationInputTokens": 37484,
+        "webSearchRequests": 0,
+        "costUSD": 1.7529244999999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 36466,
+        "outputTokens": 6500,
+        "cacheReadInputTokens": 592198,
+        "cacheCreationInputTokens": 31094,
+        "webSearchRequests": 0,
+        "costUSD": 0.16705329999999996,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "9388f4fc-9a0e-4a38-909d-0152a708be6d"
+  },
+  "session_id": "62654c59-c429-4b81-9fed-9ab8f653eaea",
+  "result_text": "The fix is clean and minimal. Here's a summary of what was done:\n\n## Root Cause\n\nIn `sphinx/ext/autodoc/importer.py`, `get_class_members()` processes a class's MRO to collect members. For annotation-only members (e.g., `attr1: int`), the code has two separate steps:\n\n1. **Lines 297-301**: Scans `__annotations__` for each class in the MRO and adds annotation-only members to `members` **without a docstring**\n2. **Lines 303-313**: Loads the module's `ModuleAnalyzer` to find inline `#:` docstring comments \u2014 but only creates `ObjectMember` entries if `name not in members`\n\nSince the annotation scan (step 1) runs first and adds the member without a docstring, the docstring scan (step 2) skips it due to the `name not in members` guard. The `ObjectMember` is left with `docstring=None`.\n\nIn `filter_members()`, since the inherited annotation-only member has no docstring AND `('Bar', 'attr1')` is not in `attr_docs` (only `('Foo', 'attr1')` is), the member is treated as undocumented and excluded.\n\n## Fix\n\nAdded an `elif members[name].docstring is None` branch: when the analyzer finds a docstring for a member that was already added via annotation without a docstring, it updates the docstring. This correctly handles the case where `Foo.attr1` gets its `#:` comment docstring attached even when inherited by `Bar`.",
+  "total_cost_usd": 1.9199778,
+  "num_turns": 52
+}

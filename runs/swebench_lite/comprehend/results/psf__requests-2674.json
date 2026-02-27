@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 135,
+  "git_diff": "diff --git a/requests/adapters.py b/requests/adapters.py\nindex 841cbbfe..41c53eee 100644\n--- a/requests/adapters.py\n+++ b/requests/adapters.py\n@@ -27,9 +27,11 @@ from .packages.urllib3.exceptions import ProtocolError\n from .packages.urllib3.exceptions import ReadTimeoutError\n from .packages.urllib3.exceptions import SSLError as _SSLError\n from .packages.urllib3.exceptions import ResponseError\n+from .packages.urllib3.exceptions import DecodeError as _DecodeError\n+from .packages.urllib3.exceptions import TimeoutError as _TimeoutError\n from .cookies import extract_cookies_to_jar\n from .exceptions import (ConnectionError, ConnectTimeout, ReadTimeout, SSLError,\n-                         ProxyError, RetryError)\n+                         ProxyError, RetryError, ContentDecodingError, Timeout)\n from .auth import _basic_auth_str\n \n DEFAULT_POOLBLOCK = False\n@@ -429,6 +431,10 @@ class HTTPAdapter(BaseAdapter):\n                 raise SSLError(e, request=request)\n             elif isinstance(e, ReadTimeoutError):\n                 raise ReadTimeout(e, request=request)\n+            elif isinstance(e, _DecodeError):\n+                raise ContentDecodingError(e, request=request)\n+            elif isinstance(e, _TimeoutError):\n+                raise Timeout(e, request=request)\n             else:\n                 raise\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 133157,
+    "duration_api_ms": 133966,
+    "num_turns": 17,
+    "result": "The fix is clean and syntactically valid. Here's a summary of what was changed and why:\n\n**Root cause:** In `requests/adapters.py`, the `except (_SSLError, _HTTPError)` block at lines 429-439 only explicitly handled `_SSLError` and `ReadTimeoutError`. Any other urllib3 `HTTPError` subclasses (including `DecodeError` and `TimeoutError`) fell through to the bare `raise`, exposing raw urllib3 exceptions to callers.\n\n**Changes made to `requests/adapters.py`:**\n\n1. **Added two new imports** (lines 30-31):\n   - `DecodeError as _DecodeError` \u2014 urllib3's exception for failed content-encoding decoding\n   - `TimeoutError as _TimeoutError` \u2014 urllib3's base timeout exception (catches proxy timeouts and other non-read timeouts)\n\n2. **Added `ContentDecodingError` and `Timeout`** to the existing requests exceptions import (line 34)\n\n3. **Added two new `elif` branches** to the exception handler (lines 434-437):\n   - `_DecodeError` \u2192 `ContentDecodingError` (requests' wrapper for decode failures)\n   - `_TimeoutError` \u2192 `Timeout` (requests' base timeout; placed after the more specific `ReadTimeoutError` check so `ReadTimeout` still takes precedence for read timeouts)",
+    "stop_reason": null,
+    "session_id": "a8686016-0ab5-429e-a65f-95a795725a20",
+    "total_cost_usd": 0.59282505,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 21179,
+      "cache_read_input_tokens": 463528,
+      "output_tokens": 6446,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 21179,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 16,
+        "outputTokens": 6446,
+        "cacheReadInputTokens": 463528,
+        "cacheCreationInputTokens": 21179,
+        "webSearchRequests": 0,
+        "costUSD": 0.5253627499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 4894,
+        "outputTokens": 4144,
+        "cacheReadInputTokens": 164833,
+        "cacheCreationInputTokens": 20292,
+        "webSearchRequests": 0,
+        "costUSD": 0.0674623,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "c42f3a9e-d6b4-40d8-9f40-50a8e202cf42"
+  },
+  "session_id": "a8686016-0ab5-429e-a65f-95a795725a20",
+  "result_text": "The fix is clean and syntactically valid. Here's a summary of what was changed and why:\n\n**Root cause:** In `requests/adapters.py`, the `except (_SSLError, _HTTPError)` block at lines 429-439 only explicitly handled `_SSLError` and `ReadTimeoutError`. Any other urllib3 `HTTPError` subclasses (including `DecodeError` and `TimeoutError`) fell through to the bare `raise`, exposing raw urllib3 exceptions to callers.\n\n**Changes made to `requests/adapters.py`:**\n\n1. **Added two new imports** (lines 30-31):\n   - `DecodeError as _DecodeError` \u2014 urllib3's exception for failed content-encoding decoding\n   - `TimeoutError as _TimeoutError` \u2014 urllib3's base timeout exception (catches proxy timeouts and other non-read timeouts)\n\n2. **Added `ContentDecodingError` and `Timeout`** to the existing requests exceptions import (line 34)\n\n3. **Added two new `elif` branches** to the exception handler (lines 434-437):\n   - `_DecodeError` \u2192 `ContentDecodingError` (requests' wrapper for decode failures)\n   - `_TimeoutError` \u2192 `Timeout` (requests' base timeout; placed after the more specific `ReadTimeoutError` check so `ReadTimeout` still takes precedence for read timeouts)",
+  "total_cost_usd": 0.59282505,
+  "num_turns": 17
+}

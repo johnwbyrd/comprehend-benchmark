@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 136,
+  "git_diff": "diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py\nindex a308e27297..45bea36085 100644\n--- a/astropy/modeling/separable.py\n+++ b/astropy/modeling/separable.py\n@@ -242,7 +242,7 @@ def _cstack(left, right):\n         cright = _coord_matrix(right, 'right', noutp)\n     else:\n         cright = np.zeros((noutp, right.shape[1]))\n-        cright[-right.shape[0]:, -right.shape[1]:] = 1\n+        cright[-right.shape[0]:, -right.shape[1]:] = right\n \n     return np.hstack([cleft, cright])\n \ndiff --git a/astropy/modeling/tests/test_separable.py b/astropy/modeling/tests/test_separable.py\nindex 8dfe5c8626..e43d6b3cdd 100644\n--- a/astropy/modeling/tests/test_separable.py\n+++ b/astropy/modeling/tests/test_separable.py\n@@ -135,6 +135,22 @@ def test_separable(compound_model, result):\n     assert_allclose(separability_matrix(compound_model), result[1])\n \n \n+def test_separability_matrix_nested_compound_model():\n+    \"\"\"\n+    Test that separability_matrix gives correct result for nested CompoundModels.\n+    Regression test for https://github.com/astropy/astropy/issues/12907\n+    \"\"\"\n+    # cm is separable: output 0 depends only on input 0, output 1 only on input 1\n+    cm = models.Linear1D(10) & models.Linear1D(5)\n+    assert_allclose(separability_matrix(cm), np.array([[True, False], [False, True]]))\n+\n+    # Nesting cm inside another compound model should give the same result as\n+    # using the flat equivalent: Pix2Sky_TAN() & Linear1D(10) & Linear1D(5)\n+    nested = models.Pix2Sky_TAN() & cm\n+    flat = models.Pix2Sky_TAN() & models.Linear1D(10) & models.Linear1D(5)\n+    assert_allclose(separability_matrix(nested), separability_matrix(flat))\n+\n+\n def test_custom_model_separable():\n     @custom_model\n     def model_a(x):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 134081,
+    "duration_api_ms": 133228,
+    "num_turns": 25,
+    "result": "The fix is clean and correct. Here's a summary of what was wrong and what was fixed:\n\n**Root cause:** In `_cstack` (the function handling the `&` operator), when the `right` argument is already a computed numpy array (i.e., the result of a previous `_separable` call on a nested `CompoundModel`), line 245 was:\n\n```python\ncright[-right.shape[0]:, -right.shape[1]:] = 1  # BUG: overwrites matrix with all 1s\n```\n\nThis discarded the actual separability information from the nested compound model and replaced it with a fully-coupled (all-ones) submatrix, making what were actually separable outputs appear non-separable.\n\n**Fix:** Change `= 1` to `= right` so the actual computed values are used:\n\n```python\ncright[-right.shape[0]:, -right.shape[1]:] = right  # FIX: use actual matrix values\n```\n\n**Effect:**\n- Before fix: `separability_matrix(Pix2Sky_TAN() & cm)` \u2192 `[[T,T,F,F],[T,T,F,F],[F,F,T,T],[F,F,T,T]]` (wrong)\n- After fix: `separability_matrix(Pix2Sky_TAN() & cm)` \u2192 `[[T,T,F,F],[T,T,F,F],[F,F,T,F],[F,F,F,T]]` (correct, matches the flat equivalent)",
+    "stop_reason": null,
+    "session_id": "e1a004ba-0316-47eb-8efe-97286c81d99d",
+    "total_cost_usd": 0.7743485000000002,
+    "usage": {
+      "input_tokens": 27,
+      "cache_creation_input_tokens": 28362,
+      "cache_read_input_tokens": 838862,
+      "output_tokens": 5951,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 28362,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 27,
+        "outputTokens": 5951,
+        "cacheReadInputTokens": 838862,
+        "cacheCreationInputTokens": 28362,
+        "webSearchRequests": 0,
+        "costUSD": 0.7456035000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 23780,
+        "outputTokens": 993,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.028745000000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "76ffe5cf-74a0-4d3b-b48a-26af0b95ce2c"
+  },
+  "session_id": "e1a004ba-0316-47eb-8efe-97286c81d99d",
+  "result_text": "The fix is clean and correct. Here's a summary of what was wrong and what was fixed:\n\n**Root cause:** In `_cstack` (the function handling the `&` operator), when the `right` argument is already a computed numpy array (i.e., the result of a previous `_separable` call on a nested `CompoundModel`), line 245 was:\n\n```python\ncright[-right.shape[0]:, -right.shape[1]:] = 1  # BUG: overwrites matrix with all 1s\n```\n\nThis discarded the actual separability information from the nested compound model and replaced it with a fully-coupled (all-ones) submatrix, making what were actually separable outputs appear non-separable.\n\n**Fix:** Change `= 1` to `= right` so the actual computed values are used:\n\n```python\ncright[-right.shape[0]:, -right.shape[1]:] = right  # FIX: use actual matrix values\n```\n\n**Effect:**\n- Before fix: `separability_matrix(Pix2Sky_TAN() & cm)` \u2192 `[[T,T,F,F],[T,T,F,F],[F,F,T,T],[F,F,T,T]]` (wrong)\n- After fix: `separability_matrix(Pix2Sky_TAN() & cm)` \u2192 `[[T,T,F,F],[T,T,F,F],[F,F,T,F],[F,F,F,T]]` (correct, matches the flat equivalent)",
+  "total_cost_usd": 0.7743485000000002,
+  "num_turns": 25
+}

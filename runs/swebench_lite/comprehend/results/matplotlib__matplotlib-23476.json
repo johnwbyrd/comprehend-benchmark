@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 194,
+  "git_diff": "diff --git a/lib/matplotlib/backend_bases.py b/lib/matplotlib/backend_bases.py\nindex 9ae2982c62..48ef6e8728 100644\n--- a/lib/matplotlib/backend_bases.py\n+++ b/lib/matplotlib/backend_bases.py\n@@ -1653,7 +1653,10 @@ class FigureCanvasBase:\n         self.toolbar = None  # NavigationToolbar2 will set me\n         self._is_idle_drawing = False\n         # We don't want to scale up the figure DPI more than once.\n-        figure._original_dpi = figure.dpi\n+        # If the figure already has an _original_dpi set (e.g. after unpickling),\n+        # we must not overwrite it, since figure.dpi may already be scaled.\n+        if not hasattr(figure, '_original_dpi'):\n+            figure._original_dpi = figure.dpi\n         self._device_pixel_ratio = 1\n         super().__init__()  # Typically the GUI widget init (if any).\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 191222,
+    "duration_api_ms": 193677,
+    "num_turns": 21,
+    "result": "The fix is in place. Let me summarize the root cause and fix:\n\n## Root Cause\n\nThe bug is in `FigureCanvasBase.__init__` in `lib/matplotlib/backend_bases.py`, line 1656.\n\n**Normal flow (first-time creation on Retina/M1 Mac):**\n1. Figure created with DPI 100\n2. `FigureCanvasBase.__init__` sets `figure._original_dpi = 100`\n3. Mac backend calls `_set_device_pixel_ratio(2)` \u2192 `dpi = 2 \u00d7 100 = 200`\n4. Figure pickled with `dpi=200`, `_original_dpi=100`\n\n**Buggy flow (after unpickling):**\n1. `Figure.__setstate__` restores state: `dpi=200`, `_original_dpi=100` \u2713\n2. `FigureCanvasBase(self)` is called \u2192 **overwrites** `_original_dpi = figure.dpi = 200` \u2717\n3. Mac backend calls `_set_device_pixel_ratio(2)` \u2192 `dpi = 2 \u00d7 200 = 400` (doubled!)\n\nEach subsequent pickle/unpickle cycle doubles the DPI, eventually causing an `OverflowError`.\n\n## Fix\n\nChanged the unconditional assignment to a conditional one:\n\n```python\n# Before (buggy):\nfigure._original_dpi = figure.dpi\n\n# After (fixed):\nif not hasattr(figure, '_original_dpi'):\n    figure._original_dpi = figure.dpi\n```\n\nWhen a figure is unpickled, `_original_dpi` is already correctly restored from the pickled state (e.g., 100). The `hasattr` guard prevents overwriting it with the already-scaled `figure.dpi` (e.g., 200). The Mac backend then correctly scales to `2 \u00d7 100 = 200` instead of `2 \u00d7 200 = 400`.",
+    "stop_reason": null,
+    "session_id": "72048c28-57f1-4023-ad90-ff15cdeef742",
+    "total_cost_usd": 0.8221847499999999,
+    "usage": {
+      "input_tokens": 20,
+      "cache_creation_input_tokens": 31109,
+      "cache_read_input_tokens": 689491,
+      "output_tokens": 10914,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31109,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 20,
+        "outputTokens": 10914,
+        "cacheReadInputTokens": 689491,
+        "cacheCreationInputTokens": 31109,
+        "webSearchRequests": 0,
+        "costUSD": 0.81212675,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 9413,
+        "outputTokens": 129,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.010058000000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "5de5d0d0-f3fd-437c-a4e7-3f52ada3519b"
+  },
+  "session_id": "72048c28-57f1-4023-ad90-ff15cdeef742",
+  "result_text": "The fix is in place. Let me summarize the root cause and fix:\n\n## Root Cause\n\nThe bug is in `FigureCanvasBase.__init__` in `lib/matplotlib/backend_bases.py`, line 1656.\n\n**Normal flow (first-time creation on Retina/M1 Mac):**\n1. Figure created with DPI 100\n2. `FigureCanvasBase.__init__` sets `figure._original_dpi = 100`\n3. Mac backend calls `_set_device_pixel_ratio(2)` \u2192 `dpi = 2 \u00d7 100 = 200`\n4. Figure pickled with `dpi=200`, `_original_dpi=100`\n\n**Buggy flow (after unpickling):**\n1. `Figure.__setstate__` restores state: `dpi=200`, `_original_dpi=100` \u2713\n2. `FigureCanvasBase(self)` is called \u2192 **overwrites** `_original_dpi = figure.dpi = 200` \u2717\n3. Mac backend calls `_set_device_pixel_ratio(2)` \u2192 `dpi = 2 \u00d7 200 = 400` (doubled!)\n\nEach subsequent pickle/unpickle cycle doubles the DPI, eventually causing an `OverflowError`.\n\n## Fix\n\nChanged the unconditional assignment to a conditional one:\n\n```python\n# Before (buggy):\nfigure._original_dpi = figure.dpi\n\n# After (fixed):\nif not hasattr(figure, '_original_dpi'):\n    figure._original_dpi = figure.dpi\n```\n\nWhen a figure is unpickled, `_original_dpi` is already correctly restored from the pickled state (e.g., 100). The `hasattr` guard prevents overwriting it with the already-scaled `figure.dpi` (e.g., 200). The Mac backend then correctly scales to `2 \u00d7 100 = 200` instead of `2 \u00d7 200 = 400`.",
+  "total_cost_usd": 0.8221847499999999,
+  "num_turns": 21
+}

@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 221,
+  "git_diff": "diff --git a/seaborn/_oldcore.py b/seaborn/_oldcore.py\nindex c9218c1f..b2ecb44b 100644\n--- a/seaborn/_oldcore.py\n+++ b/seaborn/_oldcore.py\n@@ -149,19 +149,25 @@ class HueMapping(SemanticMapping):\n             # Use a value that's in the original data vector\n             value = self.lookup_table[key]\n         except KeyError:\n-            # Use the colormap to interpolate between existing datapoints\n-            # (e.g. in the context of making a continuous legend)\n-            try:\n-                normed = self.norm(key)\n-            except TypeError as err:\n-                if np.isnan(key):\n-                    value = (0, 0, 0, 0)\n-                else:\n-                    raise err\n+            if self.norm is None:\n+                # When using categorical hue mapping, a KeyError means the\n+                # value was not in hue_order (i.e. intentionally excluded).\n+                # Return a fully transparent color so it is not plotted.\n+                value = (0, 0, 0, 0)\n             else:\n-                if np.ma.is_masked(normed):\n-                    normed = np.nan\n-                value = self.cmap(normed)\n+                # Use the colormap to interpolate between existing datapoints\n+                # (e.g. in the context of making a continuous legend)\n+                try:\n+                    normed = self.norm(key)\n+                except TypeError as err:\n+                    if np.isnan(key):\n+                        value = (0, 0, 0, 0)\n+                    else:\n+                        raise err\n+                else:\n+                    if np.ma.is_masked(normed):\n+                        normed = np.nan\n+                    value = self.cmap(normed)\n         return value\n \n     def infer_map_type(self, palette, norm, input_format, var_type):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 219280,
+    "duration_api_ms": 234153,
+    "num_turns": 16,
+    "result": "The fix is in place. Here's a summary of the bug and the fix:\n\n**Root Cause**\n\nIn `seaborn/_oldcore.py`, `HueMapping._lookup_single()` handles the case where a hue value isn't in the `lookup_table` (which happens when `hue_order` excludes some values present in the data). The original code tried to call `self.norm(key)` \u2014 but for categorical hue mappings, `self.norm` is `None`, so calling it raises a `TypeError`. The error handler then tried `np.isnan(key)` which fails for string types (like species names), producing the cryptic error.\n\n**Fix** (`seaborn/_oldcore.py:151-156`)\n\nWhen `self.norm is None` (categorical mapping), a `KeyError` on `lookup_table` means the value was intentionally excluded via `hue_order`. The fix returns `(0, 0, 0, 0)` (fully transparent RGBA) for such values, effectively hiding those points without raising an error. The numeric-hue path (`self.norm is not None`) is unchanged.",
+    "stop_reason": null,
+    "session_id": "5ba7eb64-8e40-46f4-b3bd-3a612641a637",
+    "total_cost_usd": 0.7382674999999999,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 17815,
+      "cache_read_input_tokens": 443123,
+      "output_tokens": 3364,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 17815,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 3364,
+        "cacheReadInputTokens": 443123,
+        "cacheCreationInputTokens": 17815,
+        "webSearchRequests": 0,
+        "costUSD": 0.41709525000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 36638,
+        "outputTokens": 11373,
+        "cacheReadInputTokens": 1666930,
+        "cacheCreationInputTokens": 48781,
+        "webSearchRequests": 0,
+        "costUSD": 0.32117225,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "22bc7aa7-7564-4ee4-960e-715192b19fb0"
+  },
+  "session_id": "5ba7eb64-8e40-46f4-b3bd-3a612641a637",
+  "result_text": "The fix is in place. Here's a summary of the bug and the fix:\n\n**Root Cause**\n\nIn `seaborn/_oldcore.py`, `HueMapping._lookup_single()` handles the case where a hue value isn't in the `lookup_table` (which happens when `hue_order` excludes some values present in the data). The original code tried to call `self.norm(key)` \u2014 but for categorical hue mappings, `self.norm` is `None`, so calling it raises a `TypeError`. The error handler then tried `np.isnan(key)` which fails for string types (like species names), producing the cryptic error.\n\n**Fix** (`seaborn/_oldcore.py:151-156`)\n\nWhen `self.norm is None` (categorical mapping), a `KeyError` on `lookup_table` means the value was intentionally excluded via `hue_order`. The fix returns `(0, 0, 0, 0)` (fully transparent RGBA) for such values, effectively hiding those points without raising an error. The numeric-hue path (`self.norm is not None`) is unchanged.",
+  "total_cost_usd": 0.7382674999999999,
+  "num_turns": 16
+}

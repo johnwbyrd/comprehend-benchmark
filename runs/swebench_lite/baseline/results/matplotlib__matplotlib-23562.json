@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 23,
+  "git_diff": "diff --git a/lib/mpl_toolkits/mplot3d/art3d.py b/lib/mpl_toolkits/mplot3d/art3d.py\nindex 8fe6e7a9c1..80046ebf35 100644\n--- a/lib/mpl_toolkits/mplot3d/art3d.py\n+++ b/lib/mpl_toolkits/mplot3d/art3d.py\n@@ -765,6 +765,8 @@ class Poly3DCollection(PolyCollection):\n         self._facecolor3d = PolyCollection.get_facecolor(self)\n         self._edgecolor3d = PolyCollection.get_edgecolor(self)\n         self._alpha3d = PolyCollection.get_alpha(self)\n+        self._facecolors2d = self._facecolor3d\n+        self._edgecolors2d = self._edgecolor3d\n         self.stale = True\n \n     def set_sort_zpos(self, val):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 20885,
+    "duration_api_ms": 20550,
+    "num_turns": 4,
+    "result": "This initializes `_facecolors2d` and `_edgecolors2d` to the 3D face/edge colors at construction time, so `get_facecolor()` / `get_edgecolor()` won't raise `AttributeError` when called before the figure is rendered. Once `do_3d_projection()` runs (during rendering), those attributes are updated with the properly projected 2D values.",
+    "stop_reason": null,
+    "session_id": "05ed6f70-927b-477e-83ce-a0f6d532bfb4",
+    "total_cost_usd": 0.14701424999999999,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 9747,
+      "cache_read_input_tokens": 95731,
+      "output_tokens": 1528,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 9747,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 6,
+        "outputTokens": 1528,
+        "cacheReadInputTokens": 95731,
+        "cacheCreationInputTokens": 9747,
+        "webSearchRequests": 0,
+        "costUSD": 0.14701424999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "737e5603-d244-49f8-ba15-e8c4ea9157bf"
+  },
+  "session_id": "05ed6f70-927b-477e-83ce-a0f6d532bfb4",
+  "result_text": "This initializes `_facecolors2d` and `_edgecolors2d` to the 3D face/edge colors at construction time, so `get_facecolor()` / `get_edgecolor()` won't raise `AttributeError` when called before the figure is rendered. Once `do_3d_projection()` runs (during rendering), those attributes are updated with the properly projected 2D values.",
+  "total_cost_usd": 0.14701424999999999,
+  "num_turns": 4
+}

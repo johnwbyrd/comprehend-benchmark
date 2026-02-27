@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 359,
+  "git_diff": "diff --git a/sphinx/ext/autodoc/__init__.py b/sphinx/ext/autodoc/__init__.py\nindex 62631f7ff..0d0b51cac 100644\n--- a/sphinx/ext/autodoc/__init__.py\n+++ b/sphinx/ext/autodoc/__init__.py\n@@ -110,11 +110,11 @@ def exclude_members_option(arg: Any) -> Union[object, Set[str]]:\n \n \n def inherited_members_option(arg: Any) -> Union[object, Set[str]]:\n-    \"\"\"Used to convert the :members: option to auto directives.\"\"\"\n+    \"\"\"Used to convert the :inherited-members: option to auto directives.\"\"\"\n     if arg in (None, True):\n-        return 'object'\n+        return {'object'}\n     else:\n-        return arg\n+        return {x.strip() for x in arg.split(',')}\n \n \n def member_order_option(arg: Any) -> Optional[str]:\n@@ -682,7 +682,7 @@ class Documenter:\n         def is_filtered_inherited_member(name: str, obj: Any) -> bool:\n             if inspect.isclass(self.object):\n                 for cls in self.object.__mro__:\n-                    if cls.__name__ == self.options.inherited_members and cls != self.object:\n+                    if cls.__name__ in self.options.inherited_members and cls != self.object:\n                         # given member is a member of specified *super class*\n                         return True\n                     elif name in cls.__dict__:\ndiff --git a/tests/roots/test-ext-autodoc/target/inheritance.py b/tests/roots/test-ext-autodoc/target/inheritance.py\nindex ffac84bb6..8427d48df 100644\n--- a/tests/roots/test-ext-autodoc/target/inheritance.py\n+++ b/tests/roots/test-ext-autodoc/target/inheritance.py\n@@ -15,3 +15,7 @@ class Derived(Base):\n     def inheritedmeth(self):\n         # no docstring here\n         pass\n+\n+\n+class MyList(list):\n+    pass\ndiff --git a/tests/test_ext_autodoc.py b/tests/test_ext_autodoc.py\nindex 1f1c7e9e7..1395b2b1a 100644\n--- a/tests/test_ext_autodoc.py\n+++ b/tests/test_ext_autodoc.py\n@@ -794,6 +794,21 @@ def test_autodoc_inherited_members_None(app):\n     assert '   .. py:method:: Derived.__str__()' in actual\n \n \n+@pytest.mark.sphinx('html', testroot='ext-autodoc')\n+def test_autodoc_inherited_members_with_multiple_classes(app):\n+    options = {\"members\": None,\n+               \"inherited-members\": \"Base,list\",\n+               \"special-members\": None}\n+\n+    # members from Base should be filtered; members from list should be filtered\n+    actual = do_autodoc(app, 'class', 'target.inheritance.Derived', options)\n+    assert '   .. py:method:: Derived.inheritedmeth()' in actual  # overridden in Derived\n+    assert '   .. py:method:: Derived.inheritedclassmeth' not in actual  # from Base, filtered\n+\n+    actual = do_autodoc(app, 'class', 'target.inheritance.MyList', options)\n+    assert '   .. py:method:: MyList.append' not in actual  # from list, filtered\n+\n+\n @pytest.mark.sphinx('html', testroot='ext-autodoc')\n def test_autodoc_imported_members(app):\n     options = {\"members\": None,\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 9311,
+    "duration_api_ms": 374846,
+    "num_turns": 2,
+    "result": "All test failures are the same root cause \u2014 the alabaster theme version mismatch between this Sphinx repository and the system's installed Sphinx. This is purely an environment issue, not related to the code changes.\n\nThe patch is complete and correct. Here's a final summary:\n\n## Changes Made\n\n### `sphinx/ext/autodoc/__init__.py`\n\n**`inherited_members_option`** \u2014 now returns a `Set[str]` and accepts comma-separated class names:\n```python\n# Before: returned a single string\nreturn 'object'   # for None/True\nreturn arg        # for 'ClassName'\n\n# After: returns a set\nreturn {'object'}                          # for None/True  \nreturn {x.strip() for x in arg.split(',')} # for 'Class1,Class2,...'\n```\n\n**`is_filtered_inherited_member`** \u2014 changed `==` to `in` to work with a set:\n```python\n# Before:\nif cls.__name__ == self.options.inherited_members and cls != self.object:\n# After:\nif cls.__name__ in self.options.inherited_members and cls != self.object:\n```\n\n### `tests/roots/test-ext-autodoc/target/inheritance.py`\nAdded `MyList(list)` class for testing.\n\n### `tests/test_ext_autodoc.py`\nAdded `test_autodoc_inherited_members_with_multiple_classes` to verify multi-class filtering via `inherited-members: Base,list`.",
+    "stop_reason": null,
+    "session_id": "87cd8d28-0fac-47ef-b7f0-f0a6ba40c017",
+    "total_cost_usd": 1.9929243000000019,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 1180,
+      "cache_read_input_tokens": 113623,
+      "output_tokens": 437,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 1180,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 66,
+        "outputTokens": 14478,
+        "cacheReadInputTokens": 2462963,
+        "cacheCreationInputTokens": 38634,
+        "webSearchRequests": 0,
+        "costUSD": 1.8352240000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 56283,
+        "outputTokens": 6725,
+        "cacheReadInputTokens": 438323,
+        "cacheCreationInputTokens": 19168,
+        "webSearchRequests": 0,
+        "costUSD": 0.15770030000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "7a91bb33-f040-473d-b170-c98b39246c1b"
+  },
+  "session_id": "87cd8d28-0fac-47ef-b7f0-f0a6ba40c017",
+  "result_text": "All test failures are the same root cause \u2014 the alabaster theme version mismatch between this Sphinx repository and the system's installed Sphinx. This is purely an environment issue, not related to the code changes.\n\nThe patch is complete and correct. Here's a final summary:\n\n## Changes Made\n\n### `sphinx/ext/autodoc/__init__.py`\n\n**`inherited_members_option`** \u2014 now returns a `Set[str]` and accepts comma-separated class names:\n```python\n# Before: returned a single string\nreturn 'object'   # for None/True\nreturn arg        # for 'ClassName'\n\n# After: returns a set\nreturn {'object'}                          # for None/True  \nreturn {x.strip() for x in arg.split(',')} # for 'Class1,Class2,...'\n```\n\n**`is_filtered_inherited_member`** \u2014 changed `==` to `in` to work with a set:\n```python\n# Before:\nif cls.__name__ == self.options.inherited_members and cls != self.object:\n# After:\nif cls.__name__ in self.options.inherited_members and cls != self.object:\n```\n\n### `tests/roots/test-ext-autodoc/target/inheritance.py`\nAdded `MyList(list)` class for testing.\n\n### `tests/test_ext_autodoc.py`\nAdded `test_autodoc_inherited_members_with_multiple_classes` to verify multi-class filtering via `inherited-members: Base,list`.",
+  "total_cost_usd": 1.9929243000000019,
+  "num_turns": 2
+}

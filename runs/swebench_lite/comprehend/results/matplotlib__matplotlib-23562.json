@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 18,
+  "git_diff": "diff --git a/lib/mpl_toolkits/mplot3d/art3d.py b/lib/mpl_toolkits/mplot3d/art3d.py\nindex 8fe6e7a9c1..000446f32a 100644\n--- a/lib/mpl_toolkits/mplot3d/art3d.py\n+++ b/lib/mpl_toolkits/mplot3d/art3d.py\n@@ -867,10 +867,12 @@ class Poly3DCollection(PolyCollection):\n         self.stale = True\n \n     def get_facecolor(self):\n-        return self._facecolors2d\n+        return self._facecolors2d if hasattr(self, '_facecolors2d') \\\n+            else self._facecolor3d\n \n     def get_edgecolor(self):\n-        return self._edgecolors2d\n+        return self._edgecolors2d if hasattr(self, '_edgecolors2d') \\\n+            else self._edgecolor3d\n \n \n def poly_collection_2d_to_3d(col, zs=0, zdir='z'):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 15767,
+    "duration_api_ms": 15420,
+    "num_turns": 4,
+    "result": "The fix makes `get_facecolor()` and `get_edgecolor()` fall back to the 3D color arrays (`_facecolor3d` / `_edgecolor3d`) when the 2D projected versions haven't been computed yet (i.e., before `do_3d_projection()` runs on first render). After a render, they return the projected 2D colors as before.",
+    "stop_reason": null,
+    "session_id": "a95e43c6-e739-4fef-9ec6-19c5c85f80a8",
+    "total_cost_usd": 0.11866425,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 7575,
+      "cache_read_input_tokens": 94681,
+      "output_tokens": 958,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 7575,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 6,
+        "outputTokens": 958,
+        "cacheReadInputTokens": 94681,
+        "cacheCreationInputTokens": 7575,
+        "webSearchRequests": 0,
+        "costUSD": 0.11866425,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "d96d4b65-d0ef-44ae-96bb-95a28021286d"
+  },
+  "session_id": "a95e43c6-e739-4fef-9ec6-19c5c85f80a8",
+  "result_text": "The fix makes `get_facecolor()` and `get_edgecolor()` fall back to the 3D color arrays (`_facecolor3d` / `_edgecolor3d`) when the 2D projected versions haven't been computed yet (i.e., before `do_3d_projection()` runs on first render). After a render, they return the projected 2D colors as before.",
+  "total_cost_usd": 0.11866425,
+  "num_turns": 4
+}

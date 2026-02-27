@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 424,
+  "git_diff": "diff --git a/sphinx/util/typing.py b/sphinx/util/typing.py\nindex 2d4f67bba..cef015dd4 100644\n--- a/sphinx/util/typing.py\n+++ b/sphinx/util/typing.py\n@@ -86,6 +86,38 @@ def is_system_TypeVar(typ: Any) -> bool:\n     return modname == 'typing' and isinstance(typ, TypeVar)\n \n \n+def _get_annotation_module(annotation: Any) -> str:\n+    \"\"\"Return the correct module name for the given annotation.\n+\n+    This handles the case where a class (typically a C extension type) has an\n+    internal ``__module__`` attribute that points to a private implementation\n+    module (e.g. ``_struct`` for :class:`struct.Struct`).  In that case the\n+    function tries to find the corresponding public module.\n+    \"\"\"\n+    module = getattr(annotation, '__module__', None)\n+    if module is None:\n+        return ''\n+\n+    if module.startswith('_'):\n+        qualname = getattr(annotation, '__qualname__', None)\n+        if qualname:\n+            # Try the module name without the leading underscore\n+            # (e.g. '_struct' -> 'struct', '_collections' -> 'collections')\n+            public_module = module[1:]\n+            if public_module in sys.modules:\n+                candidate = sys.modules[public_module]\n+                try:\n+                    obj = candidate\n+                    for part in qualname.split('.'):\n+                        obj = getattr(obj, part)\n+                    if obj is annotation:\n+                        return public_module\n+                except AttributeError:\n+                    pass\n+\n+    return module\n+\n+\n def restify(cls: Optional[\"Type\"]) -> str:\n     \"\"\"Convert python class to a reST reference.\"\"\"\n     from sphinx.util import inspect  # lazy loading\n@@ -146,7 +178,7 @@ def _restify_py37(cls: Optional[\"Type\"]) -> str:\n         if cls.__module__ == 'typing':\n             return ':class:`%s`' % cls.__qualname__\n         else:\n-            return ':class:`%s.%s`' % (cls.__module__, cls.__qualname__)\n+            return ':class:`%s.%s`' % (_get_annotation_module(cls), cls.__qualname__)\n     elif hasattr(cls, '_name'):\n         # SpecialForm\n         if cls.__module__ == 'typing':\n@@ -325,7 +357,7 @@ def _stringify_py37(annotation: Any) -> str:\n         else:\n             qualname = stringify(annotation.__origin__)  # ex. Union\n     elif hasattr(annotation, '__qualname__'):\n-        qualname = '%s.%s' % (module, annotation.__qualname__)\n+        qualname = '%s.%s' % (_get_annotation_module(annotation), annotation.__qualname__)\n     elif hasattr(annotation, '__origin__'):\n         # instantiated generic provided by a user\n         qualname = stringify(annotation.__origin__)\ndiff --git a/tests/test_util_typing.py b/tests/test_util_typing.py\nindex a2565f1e1..ae13aa666 100644\n--- a/tests/test_util_typing.py\n+++ b/tests/test_util_typing.py\n@@ -8,6 +8,7 @@\n     :license: BSD, see LICENSE for details.\n \"\"\"\n \n+import struct\n import sys\n from numbers import Integral\n from typing import (Any, Callable, Dict, Generator, List, NewType, Optional, Tuple, TypeVar,\n@@ -119,6 +120,11 @@ def test_restify_broken_type_hints():\n     assert restify(BrokenType) == ':class:`tests.test_util_typing.BrokenType`'\n \n \n+@pytest.mark.skipif(sys.version_info < (3, 7), reason='python 3.7+ is required.')\n+def test_restify_type_hints_Struct():\n+    assert restify(struct.Struct) == ':class:`struct.Struct`'\n+\n+\n def test_stringify():\n     assert stringify(int) == \"int\"\n     assert stringify(str) == \"str\"\n@@ -205,3 +211,8 @@ def test_stringify_type_hints_alias():\n \n def test_stringify_broken_type_hints():\n     assert stringify(BrokenType) == 'tests.test_util_typing.BrokenType'\n+\n+\n+@pytest.mark.skipif(sys.version_info < (3, 7), reason='python 3.7+ is required.')\n+def test_stringify_type_hints_Struct():\n+    assert stringify(struct.Struct) == 'struct.Struct'\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 422016,
+    "duration_api_ms": 457774,
+    "num_turns": 37,
+    "result": "Here's a summary of the fix:\n\n## Root Cause\n\n`struct.Struct` is a C extension type whose `__module__` attribute reports `'_struct'` (the internal C implementation module) rather than `'struct'` (the public Python module). When Sphinx's `stringify()` and `restify()` functions built cross-reference strings, they used `__module__` directly, producing `_struct.Struct` instead of `struct.Struct`. Since `_struct` isn't documented, Sphinx reported \"class reference target not found: Struct\".\n\nThis is why `pathlib.Path` worked \u2014 it's a pure Python class with a correct `__module__` of `'pathlib'`.\n\n## Fix\n\nAdded a helper function `_get_annotation_module()` in `sphinx/util/typing.py` that:\n1. Gets `annotation.__module__`\n2. If it starts with `_` (indicating a private C extension module), strips the leading underscore and checks if the resulting public module name exists in `sys.modules`\n3. If so, checks that the annotation is accessible via that public module (identity check)\n4. Returns the correct public module name, falling back to the original if not found\n\nThen updated `_restify_py37()` and `_stringify_py37()` to use `_get_annotation_module()` when building qualified names for classes.",
+    "stop_reason": null,
+    "session_id": "ed522470-76c1-40fb-ba1d-d160c95ec961",
+    "total_cost_usd": 1.7797871500000002,
+    "usage": {
+      "input_tokens": 37,
+      "cache_creation_input_tokens": 40933,
+      "cache_read_input_tokens": 1706602,
+      "output_tokens": 12576,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 40933,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 37,
+        "outputTokens": 12576,
+        "cacheReadInputTokens": 1706602,
+        "cacheCreationInputTokens": 40933,
+        "webSearchRequests": 0,
+        "costUSD": 1.4237172499999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 77746,
+        "outputTokens": 9845,
+        "cacheReadInputTokens": 1607639,
+        "cacheCreationInputTokens": 54668,
+        "webSearchRequests": 0,
+        "costUSD": 0.35606990000000016,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "e1dc6d47-ac8a-4df2-ae83-ce8d057d5231"
+  },
+  "session_id": "ed522470-76c1-40fb-ba1d-d160c95ec961",
+  "result_text": "Here's a summary of the fix:\n\n## Root Cause\n\n`struct.Struct` is a C extension type whose `__module__` attribute reports `'_struct'` (the internal C implementation module) rather than `'struct'` (the public Python module). When Sphinx's `stringify()` and `restify()` functions built cross-reference strings, they used `__module__` directly, producing `_struct.Struct` instead of `struct.Struct`. Since `_struct` isn't documented, Sphinx reported \"class reference target not found: Struct\".\n\nThis is why `pathlib.Path` worked \u2014 it's a pure Python class with a correct `__module__` of `'pathlib'`.\n\n## Fix\n\nAdded a helper function `_get_annotation_module()` in `sphinx/util/typing.py` that:\n1. Gets `annotation.__module__`\n2. If it starts with `_` (indicating a private C extension module), strips the leading underscore and checks if the resulting public module name exists in `sys.modules`\n3. If so, checks that the annotation is accessible via that public module (identity check)\n4. Returns the correct public module name, falling back to the original if not found\n\nThen updated `_restify_py37()` and `_stringify_py37()` to use `_get_annotation_module()` when building qualified names for classes.",
+  "total_cost_usd": 1.7797871500000002,
+  "num_turns": 37
+}

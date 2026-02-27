@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 663,
+  "git_diff": "diff --git a/lib/matplotlib/offsetbox.py b/lib/matplotlib/offsetbox.py\nindex 1dee8a23d9..5fe913d101 100644\n--- a/lib/matplotlib/offsetbox.py\n+++ b/lib/matplotlib/offsetbox.py\n@@ -1580,6 +1580,35 @@ class DraggableBase:\n     def finalize_offset(self):\n         pass\n \n+    def __getstate__(self):\n+        state = self.__dict__.copy()\n+        # The canvas cannot be pickled (it references the GUI backend), but\n+        # it can be reconstructed from the ref_artist's figure when needed.\n+        state.pop(\"canvas\")\n+        return state\n+\n+    def __setstate__(self, state):\n+        self.__dict__ = state\n+        # canvas will be reconnected the first time it is accessed via\n+        # __getattr__, at which point the figure will be fully restored.\n+\n+    def __getattr__(self, name):\n+        if name == \"canvas\":\n+            # This is called when canvas is not in __dict__ (i.e. after\n+            # unpickling).  Re-connect to the figure's current canvas and\n+            # re-register the event callbacks.\n+            canvas = self.ref_artist.figure.canvas\n+            self.canvas = canvas\n+            self.cids = [\n+                canvas.callbacks._connect_picklable(\n+                    'pick_event', self.on_pick),\n+                canvas.callbacks._connect_picklable(\n+                    'button_release_event', self.on_release),\n+            ]\n+            return canvas\n+        raise AttributeError(f\"{type(self).__name__!r} object has no \"\n+                             f\"attribute {name!r}\")\n+\n \n class DraggableOffsetBox(DraggableBase):\n     def __init__(self, ref_artist, offsetbox, use_blit=False):\ndiff --git a/lib/matplotlib/tests/test_pickle.py b/lib/matplotlib/tests/test_pickle.py\nindex ec6bdcc2fe..663b18db71 100644\n--- a/lib/matplotlib/tests/test_pickle.py\n+++ b/lib/matplotlib/tests/test_pickle.py\n@@ -282,3 +282,18 @@ def test_dynamic_norm():\n def test_vertexselector():\n     line, = plt.plot([0, 1], picker=True)\n     pickle.loads(pickle.dumps(VertexSelector(line)))\n+\n+\n+def test_draggable_legend():\n+    fig, ax = plt.subplots()\n+    ax.plot([1, 2, 3], label=\"test\")\n+    leg = ax.legend()\n+    leg.set_draggable(True)\n+    pickle.loads(pickle.dumps(fig))\n+\n+\n+def test_draggable_annotation():\n+    fig, ax = plt.subplots()\n+    ann = ax.annotate(\"test\", xy=(0.5, 0.5))\n+    ann.draggable(True)\n+    pickle.loads(pickle.dumps(fig))\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 661864,
+    "duration_api_ms": 699460,
+    "num_turns": 66,
+    "result": "Here's a summary of the fix:\n\n## Summary\n\n**Root cause:** `DraggableBase.__init__` stores `self.canvas = self.ref_artist.figure.canvas`. The canvas (e.g., `FigureCanvasQTAgg`) is not picklable because it holds GUI backend resources. While `Figure.__getstate__` already excludes its own `canvas` attribute, the `DraggableBase` still holds a direct reference to it.\n\n**Fix:** Three methods added to `DraggableBase` in `lib/matplotlib/offsetbox.py`:\n\n1. **`__getstate__`** \u2014 Excludes `canvas` from the pickled state. Everything else (the artist reference, blit flag, callback IDs, etc.) is preserved.\n\n2. **`__setstate__`** \u2014 Restores the state dict. Canvas is intentionally left out; it can't be restored here because `Figure.__setstate__` hasn't run yet and `figure.canvas` doesn't exist at that point in the unpickling process.\n\n3. **`__getattr__`** \u2014 Lazily re-connects the canvas the first time it's accessed after unpickling (by which time `Figure.__setstate__` has run and `figure.canvas` exists). It also re-registers the `pick_event` and `button_release_event` callbacks on the new canvas, ensuring dragging still works after unpickling.\n\nA test for both `test_draggable_legend` and `test_draggable_annotation` was also added to `lib/matplotlib/tests/test_pickle.py`.",
+    "stop_reason": null,
+    "session_id": "8094dc01-5c2a-4396-8bdd-c5995ebf00c3",
+    "total_cost_usd": 3.5958090500000024,
+    "usage": {
+      "input_tokens": 67,
+      "cache_creation_input_tokens": 61882,
+      "cache_read_input_tokens": 4161641,
+      "output_tokens": 34515,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 61882,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 67,
+        "outputTokens": 34515,
+        "cacheReadInputTokens": 4161641,
+        "cacheCreationInputTokens": 61882,
+        "webSearchRequests": 0,
+        "costUSD": 3.3307930000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 76339,
+        "outputTokens": 10869,
+        "cacheReadInputTokens": 840558,
+        "cacheCreationInputTokens": 40221,
+        "webSearchRequests": 0,
+        "costUSD": 0.2650160499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "19b0b9a2-47a9-403b-94fc-df91091009e8"
+  },
+  "session_id": "8094dc01-5c2a-4396-8bdd-c5995ebf00c3",
+  "result_text": "Here's a summary of the fix:\n\n## Summary\n\n**Root cause:** `DraggableBase.__init__` stores `self.canvas = self.ref_artist.figure.canvas`. The canvas (e.g., `FigureCanvasQTAgg`) is not picklable because it holds GUI backend resources. While `Figure.__getstate__` already excludes its own `canvas` attribute, the `DraggableBase` still holds a direct reference to it.\n\n**Fix:** Three methods added to `DraggableBase` in `lib/matplotlib/offsetbox.py`:\n\n1. **`__getstate__`** \u2014 Excludes `canvas` from the pickled state. Everything else (the artist reference, blit flag, callback IDs, etc.) is preserved.\n\n2. **`__setstate__`** \u2014 Restores the state dict. Canvas is intentionally left out; it can't be restored here because `Figure.__setstate__` hasn't run yet and `figure.canvas` doesn't exist at that point in the unpickling process.\n\n3. **`__getattr__`** \u2014 Lazily re-connects the canvas the first time it's accessed after unpickling (by which time `Figure.__setstate__` has run and `figure.canvas` exists). It also re-registers the `pick_event` and `button_release_event` callbacks on the new canvas, ensuring dragging still works after unpickling.\n\nA test for both `test_draggable_legend` and `test_draggable_annotation` was also added to `lib/matplotlib/tests/test_pickle.py`.",
+  "total_cost_usd": 3.5958090500000024,
+  "num_turns": 66
+}

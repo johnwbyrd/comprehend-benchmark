@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 91,
+  "git_diff": "diff --git a/lib/matplotlib/widgets.py b/lib/matplotlib/widgets.py\nindex da5b40a5ef..5828b7b545 100644\n--- a/lib/matplotlib/widgets.py\n+++ b/lib/matplotlib/widgets.py\n@@ -897,20 +897,22 @@ class RangeSlider(SliderBase):\n         _api.check_shape((2,), val=val)\n         val[0] = self._min_in_bounds(val[0])\n         val[1] = self._max_in_bounds(val[1])\n-        xy = self.poly.xy\n         if self.orientation == \"vertical\":\n-            xy[0] = .25, val[0]\n-            xy[1] = .25, val[1]\n-            xy[2] = .75, val[1]\n-            xy[3] = .75, val[0]\n-            xy[4] = .25, val[0]\n+            self.poly.xy = [\n+                [.25, val[0]],\n+                [.25, val[1]],\n+                [.75, val[1]],\n+                [.75, val[0]],\n+                [.25, val[0]],\n+            ]\n         else:\n-            xy[0] = val[0], .25\n-            xy[1] = val[0], .75\n-            xy[2] = val[1], .75\n-            xy[3] = val[1], .25\n-            xy[4] = val[0], .25\n-        self.poly.xy = xy\n+            self.poly.xy = [\n+                [val[0], .25],\n+                [val[0], .75],\n+                [val[1], .75],\n+                [val[1], .25],\n+                [val[0], .25],\n+            ]\n         self.valtext.set_text(self._format(val))\n         if self.drawon:\n             self.ax.figure.canvas.draw_idle()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 88678,
+    "duration_api_ms": 89957,
+    "num_turns": 10,
+    "result": "The C extensions aren't built for running the actual code. The fix is logically correct regardless - let me explain what the bug is and why this fix is correct:\n\n**Root cause:** When `valinit[0] == valinit[1]` (e.g., `[0.0, 0.0]`), `axvspan(0.0, 0.0, 0, 1)` creates a degenerate zero-width span. Matplotlib's `axvspan`/`axhspan` returns a `Polygon` that in this case has only **4 vertices** instead of the normal 5 (4 corners + 1 closing vertex). \n\nThe original `set_val` code:\n1. Gets `xy = self.poly.xy` \u2014 which has shape `(4, 2)` for the degenerate case\n2. Tries to set `xy[4]` \u2014 **IndexError**, since valid indices are 0\u20133\n\n**Fix:** Instead of reading the existing `xy` array and mutating it in-place, we directly assign a fresh 5-point list to `self.poly.xy`. This always works regardless of the initial polygon shape, because we're constructing the complete closed rectangle from scratch every time `set_val` is called.",
+    "stop_reason": null,
+    "session_id": "238e93f6-a626-491c-8037-f5c989814b97",
+    "total_cost_usd": 0.38274375,
+    "usage": {
+      "input_tokens": 11,
+      "cache_creation_input_tokens": 15315,
+      "cache_read_input_tokens": 261852,
+      "output_tokens": 5921,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 15315,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 11,
+        "outputTokens": 5921,
+        "cacheReadInputTokens": 261852,
+        "cacheCreationInputTokens": 15315,
+        "webSearchRequests": 0,
+        "costUSD": 0.37472475000000005,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 7794,
+        "outputTokens": 45,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.008019,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "b4b05fc3-3084-4a3b-85f4-255533b21f78"
+  },
+  "session_id": "238e93f6-a626-491c-8037-f5c989814b97",
+  "result_text": "The C extensions aren't built for running the actual code. The fix is logically correct regardless - let me explain what the bug is and why this fix is correct:\n\n**Root cause:** When `valinit[0] == valinit[1]` (e.g., `[0.0, 0.0]`), `axvspan(0.0, 0.0, 0, 1)` creates a degenerate zero-width span. Matplotlib's `axvspan`/`axhspan` returns a `Polygon` that in this case has only **4 vertices** instead of the normal 5 (4 corners + 1 closing vertex). \n\nThe original `set_val` code:\n1. Gets `xy = self.poly.xy` \u2014 which has shape `(4, 2)` for the degenerate case\n2. Tries to set `xy[4]` \u2014 **IndexError**, since valid indices are 0\u20133\n\n**Fix:** Instead of reading the existing `xy` array and mutating it in-place, we directly assign a fresh 5-point list to `self.poly.xy`. This always works regardless of the initial polygon shape, because we're constructing the complete closed rectangle from scratch every time `set_val` is called.",
+  "total_cost_usd": 0.38274375,
+  "num_turns": 10
+}

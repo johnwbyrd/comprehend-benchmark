@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 217,
+  "git_diff": "diff --git a/lib/matplotlib/figure.py b/lib/matplotlib/figure.py\nindex d2568fddbf..42a2f80b61 100644\n--- a/lib/matplotlib/figure.py\n+++ b/lib/matplotlib/figure.py\n@@ -931,6 +931,10 @@ default: %(va)s\n         self._axobservers.process(\"_axes_change_event\", self)\n         self.stale = True\n         self._localaxes.remove(ax)\n+        # If the figure has a canvas, release any mouse grab on the deleted axes.\n+        # This prevents the mouse from being permanently blocked if the axes is\n+        # deleted while a widget (e.g. RangeSlider) is still grabbing the mouse.\n+        self.canvas.release_mouse(ax)\n \n         # Break link between any shared axes\n         for name in ax._axis_names:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 215253,
+    "duration_api_ms": 236095,
+    "num_turns": 13,
+    "result": "The fix is correct and safe. Here's a summary of the bug and the fix:\n\n**Root Cause:**\n\nThe `RangeSlider` (unlike `Button`) calls its `on_changed` callback *while* the mouse is still grabbed (during a `motion_notify_event`). The `Button` widget releases the mouse *before* firing its `on_clicked` callback.\n\nWhen `clf()` is called from inside the `on_changed` callback:\n1. `clf()` \u2192 `clear()` \u2192 `delaxes(ax)` removes all axes\n2. But `delaxes()` never called `canvas.release_mouse(ax)`\n3. So `canvas.mouse_grabber` still points to the now-deleted axes\n4. All subsequent mouse events are swallowed (routed to the ghost axes) or new widgets fail to grab the mouse with a `RuntimeError`\n\n**Fix (`lib/matplotlib/figure.py`):**\n\nAdded `self.canvas.release_mouse(ax)` in `Figure.delaxes()`. This is safe because:\n- `release_mouse()` is a no-op if `ax` doesn't currently hold the mouse grab (documented: \"It is ok to call this even if *ax* doesn't have the mouse grab currently\")\n- `self.canvas` is always set on a `Figure` object",
+    "stop_reason": null,
+    "session_id": "7633a9f9-c562-4941-bfa5-4bf6d8c260ca",
+    "total_cost_usd": 0.6366466999999999,
+    "usage": {
+      "input_tokens": 14,
+      "cache_creation_input_tokens": 13907,
+      "cache_read_input_tokens": 341004,
+      "output_tokens": 3589,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 13907,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 14,
+        "outputTokens": 3589,
+        "cacheReadInputTokens": 341004,
+        "cacheCreationInputTokens": 13907,
+        "webSearchRequests": 0,
+        "costUSD": 0.34721575,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 15226,
+        "outputTokens": 9922,
+        "cacheReadInputTokens": 1656487,
+        "cacheCreationInputTokens": 47157,
+        "webSearchRequests": 0,
+        "costUSD": 0.28943095,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "dd5c4013-9732-4cc4-849c-09b744fbb114"
+  },
+  "session_id": "7633a9f9-c562-4941-bfa5-4bf6d8c260ca",
+  "result_text": "The fix is correct and safe. Here's a summary of the bug and the fix:\n\n**Root Cause:**\n\nThe `RangeSlider` (unlike `Button`) calls its `on_changed` callback *while* the mouse is still grabbed (during a `motion_notify_event`). The `Button` widget releases the mouse *before* firing its `on_clicked` callback.\n\nWhen `clf()` is called from inside the `on_changed` callback:\n1. `clf()` \u2192 `clear()` \u2192 `delaxes(ax)` removes all axes\n2. But `delaxes()` never called `canvas.release_mouse(ax)`\n3. So `canvas.mouse_grabber` still points to the now-deleted axes\n4. All subsequent mouse events are swallowed (routed to the ghost axes) or new widgets fail to grab the mouse with a `RuntimeError`\n\n**Fix (`lib/matplotlib/figure.py`):**\n\nAdded `self.canvas.release_mouse(ax)` in `Figure.delaxes()`. This is safe because:\n- `release_mouse()` is a no-op if `ax` doesn't currently hold the mouse grab (documented: \"It is ok to call this even if *ax* doesn't have the mouse grab currently\")\n- `self.canvas` is always set on a `Figure` object",
+  "total_cost_usd": 0.6366466999999999,
+  "num_turns": 13
+}

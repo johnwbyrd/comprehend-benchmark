@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 226,
+  "git_diff": "diff --git a/sphinx/ext/autodoc/__init__.py b/sphinx/ext/autodoc/__init__.py\nindex 978fd5df8..08690f8f8 100644\n--- a/sphinx/ext/autodoc/__init__.py\n+++ b/sphinx/ext/autodoc/__init__.py\n@@ -1261,6 +1261,8 @@ class FunctionDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):  # typ\n                     documenter.objpath = [None]\n                     sigs.append(documenter.format_signature())\n         if overloaded:\n+            if self.env.config.autodoc_typehints in ('none', 'description'):\n+                kwargs.setdefault('show_annotation', False)\n             __globals__ = safe_getattr(self.object, '__globals__', {})\n             for overload in self.analyzer.overloads.get('.'.join(self.objpath)):\n                 overload = evaluate_signature(overload, __globals__,\n@@ -1905,6 +1907,8 @@ class MethodDocumenter(DocstringSignatureMixin, ClassLevelDocumenter):  # type:\n                     documenter.objpath = [None]\n                     sigs.append(documenter.format_signature())\n         if overloaded:\n+            if self.env.config.autodoc_typehints in ('none', 'description'):\n+                kwargs.setdefault('show_annotation', False)\n             __globals__ = safe_getattr(self.object, '__globals__', {})\n             for overload in self.analyzer.overloads.get('.'.join(self.objpath)):\n                 overload = evaluate_signature(overload, __globals__,\ndiff --git a/tests/test_ext_autodoc_configs.py b/tests/test_ext_autodoc_configs.py\nindex 7d51b7f0e..d4b4fdb48 100644\n--- a/tests/test_ext_autodoc_configs.py\n+++ b/tests/test_ext_autodoc_configs.py\n@@ -610,6 +610,61 @@ def test_autodoc_typehints_none(app):\n     ]\n \n \n+@pytest.mark.sphinx('html', testroot='ext-autodoc',\n+                    confoverrides={'autodoc_typehints': \"none\"})\n+def test_autodoc_typehints_none_for_overloaded_functions(app):\n+    options = {\"members\": None}\n+    actual = do_autodoc(app, 'module', 'target.overload', options)\n+    assert list(actual) == [\n+        '',\n+        '.. py:module:: target.overload',\n+        '',\n+        '',\n+        '.. py:class:: Bar(x, y)',\n+        '              Bar(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Baz(x, y)',\n+        '              Baz(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Foo(x, y)',\n+        '              Foo(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Math()',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '   .. py:method:: Math.sum(x, y)',\n+        '                  Math.sum(x, y)',\n+        '                  Math.sum(x, y)',\n+        '      :module: target.overload',\n+        '',\n+        '      docstring',\n+        '',\n+        '',\n+        '.. py:function:: sum(x, y)',\n+        '                 sum(x, y)',\n+        '                 sum(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+    ]\n+\n+\n @pytest.mark.sphinx('text', testroot='ext-autodoc',\n                     confoverrides={'autodoc_typehints': \"description\"})\n def test_autodoc_typehints_description(app):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 224070,
+    "duration_api_ms": 218822,
+    "num_turns": 32,
+    "result": "The fix is correct. Let me summarize what was done:\n\n## Root Cause\n\nIn `FunctionDocumenter.format_signature()` and `MethodDocumenter.format_signature()`, when handling overloaded functions, the code directly calls `stringify_signature(overload, **kwargs)` without first checking `autodoc_typehints`. \n\nThe `format_args()` method (used for non-overloaded functions) correctly sets `show_annotation=False` when `autodoc_typehints` is `'none'` or `'description'`, but when a function is overloaded, the code bypasses `format_args()` entirely and calls `stringify_signature()` directly with the raw `**kwargs` \u2014 which doesn't include `show_annotation=False`.\n\n## Fix\n\nAdded the same `autodoc_typehints` check that exists in `format_args()` to both the overloaded code paths in `FunctionDocumenter.format_signature()` (line 1263-1265) and `MethodDocumenter.format_signature()` (line 1909-1911):\n\n```python\nif overloaded:\n    if self.env.config.autodoc_typehints in ('none', 'description'):\n        kwargs.setdefault('show_annotation', False)\n    # ... rest of overload handling\n```\n\nThis ensures that when `autodoc_typehints='none'` or `'description'` is configured, type annotations are suppressed from overloaded function signatures just like they are for regular functions.\n\nA test `test_autodoc_typehints_none_for_overloaded_functions` was also added to `tests/test_ext_autodoc_configs.py` to verify that overloaded functions respect the `autodoc_typehints='none'` setting.",
+    "stop_reason": null,
+    "session_id": "0ad63034-a176-4158-a508-352330316f11",
+    "total_cost_usd": 1.1270839000000001,
+    "usage": {
+      "input_tokens": 32,
+      "cache_creation_input_tokens": 28701,
+      "cache_read_input_tokens": 1128410,
+      "output_tokens": 7978,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 28701,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 32,
+        "outputTokens": 7978,
+        "cacheReadInputTokens": 1128410,
+        "cacheCreationInputTokens": 28701,
+        "webSearchRequests": 0,
+        "costUSD": 0.94319625,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 30649,
+        "outputTokens": 8201,
+        "cacheReadInputTokens": 632249,
+        "cacheCreationInputTokens": 39207,
+        "webSearchRequests": 0,
+        "costUSD": 0.18388764999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "354e50b1-64a7-4f74-8d3b-c67c6db4c300"
+  },
+  "session_id": "0ad63034-a176-4158-a508-352330316f11",
+  "result_text": "The fix is correct. Let me summarize what was done:\n\n## Root Cause\n\nIn `FunctionDocumenter.format_signature()` and `MethodDocumenter.format_signature()`, when handling overloaded functions, the code directly calls `stringify_signature(overload, **kwargs)` without first checking `autodoc_typehints`. \n\nThe `format_args()` method (used for non-overloaded functions) correctly sets `show_annotation=False` when `autodoc_typehints` is `'none'` or `'description'`, but when a function is overloaded, the code bypasses `format_args()` entirely and calls `stringify_signature()` directly with the raw `**kwargs` \u2014 which doesn't include `show_annotation=False`.\n\n## Fix\n\nAdded the same `autodoc_typehints` check that exists in `format_args()` to both the overloaded code paths in `FunctionDocumenter.format_signature()` (line 1263-1265) and `MethodDocumenter.format_signature()` (line 1909-1911):\n\n```python\nif overloaded:\n    if self.env.config.autodoc_typehints in ('none', 'description'):\n        kwargs.setdefault('show_annotation', False)\n    # ... rest of overload handling\n```\n\nThis ensures that when `autodoc_typehints='none'` or `'description'` is configured, type annotations are suppressed from overloaded function signatures just like they are for regular functions.\n\nA test `test_autodoc_typehints_none_for_overloaded_functions` was also added to `tests/test_ext_autodoc_configs.py` to verify that overloaded functions respect the `autodoc_typehints='none'` setting.",
+  "total_cost_usd": 1.1270839000000001,
+  "num_turns": 32
+}

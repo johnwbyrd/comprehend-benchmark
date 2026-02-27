@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 25,
+  "git_diff": "diff --git a/lib/matplotlib/axis.py b/lib/matplotlib/axis.py\nindex e6e7e29f11..f2abb72a2d 100644\n--- a/lib/matplotlib/axis.py\n+++ b/lib/matplotlib/axis.py\n@@ -1244,6 +1244,7 @@ class Axis(martist.Artist):\n                 if other is not self.axes:\n                     other._axis_map[name]._set_lim(\n                         v0, v1, emit=False, auto=auto)\n+                    other.callbacks.process(f\"{name}lim_changed\", other)\n                     if other.figure != self.figure:\n                         other.figure.canvas.draw_idle()\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 23308,
+    "duration_api_ms": 22816,
+    "num_turns": 7,
+    "result": "The fix adds `other.callbacks.process(f\"{name}lim_changed\", other)` after updating each sibling axis's limits. This ensures that:\n\n1. The recursive `_set_lim` call on sibling axes still uses `emit=False` to prevent infinite recursion (siblings calling each other indefinitely)\n2. But the `xlim_changed`/`ylim_changed` callbacks registered on sibling axes are still triggered, since they should fire whenever the limits change regardless of how the change was initiated",
+    "stop_reason": null,
+    "session_id": "2ac53d8a-25d9-45d7-907f-af24a5b00114",
+    "total_cost_usd": 0.178982,
+    "usage": {
+      "input_tokens": 9,
+      "cache_creation_input_tokens": 9374,
+      "cache_read_input_tokens": 175949,
+      "output_tokens": 1295,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 9374,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 9,
+        "outputTokens": 1295,
+        "cacheReadInputTokens": 175949,
+        "cacheCreationInputTokens": 9374,
+        "webSearchRequests": 0,
+        "costUSD": 0.178982,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "825d5c2d-b988-4571-b8ad-4936362a9b05"
+  },
+  "session_id": "2ac53d8a-25d9-45d7-907f-af24a5b00114",
+  "result_text": "The fix adds `other.callbacks.process(f\"{name}lim_changed\", other)` after updating each sibling axis's limits. This ensures that:\n\n1. The recursive `_set_lim` call on sibling axes still uses `emit=False` to prevent infinite recursion (siblings calling each other indefinitely)\n2. But the `xlim_changed`/`ylim_changed` callbacks registered on sibling axes are still triggered, since they should fire whenever the limits change regardless of how the change was initiated",
+  "total_cost_usd": 0.178982,
+  "num_turns": 7
+}

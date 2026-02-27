@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 1235,
+  "git_diff": "diff --git a/sphinx/domains/std.py b/sphinx/domains/std.py\nindex 4bde57930..5aeec3fb4 100644\n--- a/sphinx/domains/std.py\n+++ b/sphinx/domains/std.py\n@@ -843,6 +843,10 @@ class StandardDomain(Domain):\n         if figtype is None:\n             return None\n \n+        if figtype != 'section' and self.get_numfig_title(target_node) is None:\n+            # no caption, so no number can be assigned\n+            return contnode\n+\n         if figtype != 'section' and env.config.numfig is False:\n             logger.warning(__('numfig is disabled. :numref: is ignored.'), location=node)\n             return contnode\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 1233295,
+    "duration_api_ms": 1283273,
+    "num_turns": 83,
+    "result": "The fix is in place. Here's a summary of the root cause and fix:\n\n## Root Cause\n\nIn Sphinx 3.3, commit `66dda1fc5` changed `assign_figure_numbers()` in `toctree.py` to skip assigning figure numbers to uncaptioned enumerable nodes (tables without titles, figures without captions). This was intentional \u2014 uncaptioned items shouldn't be numbered.\n\nHowever, `_resolve_numref_xref()` in `std.py` was not updated to handle this case. When a user had an uncaptioned table with a `:name:` attribute referenced via `:numref:`, the flow was:\n\n1. The uncaptioned table gets no figure number (new 3.3 behavior)  \n2. `:numref:` still tries to look up its figure number\n3. `get_fignumber()` raises `ValueError` (no number in `toc_fignumbers`)\n4. The warning `\"no number is assigned for table: ...\"` is emitted\n\nThis was a regression \u2014 before 3.3, ALL named tables got numbers regardless of caption, so these references worked silently.\n\n## Fix\n\nAdded a check in `_resolve_numref_xref()` (line 846-848): if the target node is an enumerable node (figtype is not `'section'`) **and** has no numfig title (`get_numfig_title()` returns `None`), silently return `contnode` without warning. This is consistent with the `assign_figure_numbers()` change that also uses `get_numfig_title()` to skip uncaptioned nodes.\n\n**Why this is correct:**\n- Captioned nodes still proceed to the fignumber lookup (and warn if orphaned \u2014 preserving that useful warning)\n- Sections are explicitly excluded (`figtype != 'section'`) since they always have titles but may still lack numbers, and the existing section warning is expected behavior\n- All existing tests still pass since they only check for section-level \"no number assigned\" warnings",
+    "stop_reason": null,
+    "session_id": "9ae01d35-b4ef-43e1-a8c7-abe237ace7f1",
+    "total_cost_usd": 5.612937050000004,
+    "usage": {
+      "input_tokens": 74,
+      "cache_creation_input_tokens": 113939,
+      "cache_read_input_tokens": 5932960,
+      "output_tokens": 68261,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 113939,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 74,
+        "outputTokens": 68261,
+        "cacheReadInputTokens": 5932960,
+        "cacheCreationInputTokens": 113939,
+        "webSearchRequests": 0,
+        "costUSD": 5.385493750000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 63221,
+        "outputTokens": 10379,
+        "cacheReadInputTokens": 538598,
+        "cacheCreationInputTokens": 46774,
+        "webSearchRequests": 0,
+        "costUSD": 0.2274433,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "27e3743a-2aa9-4189-90b7-a29981cc124c"
+  },
+  "session_id": "9ae01d35-b4ef-43e1-a8c7-abe237ace7f1",
+  "result_text": "The fix is in place. Here's a summary of the root cause and fix:\n\n## Root Cause\n\nIn Sphinx 3.3, commit `66dda1fc5` changed `assign_figure_numbers()` in `toctree.py` to skip assigning figure numbers to uncaptioned enumerable nodes (tables without titles, figures without captions). This was intentional \u2014 uncaptioned items shouldn't be numbered.\n\nHowever, `_resolve_numref_xref()` in `std.py` was not updated to handle this case. When a user had an uncaptioned table with a `:name:` attribute referenced via `:numref:`, the flow was:\n\n1. The uncaptioned table gets no figure number (new 3.3 behavior)  \n2. `:numref:` still tries to look up its figure number\n3. `get_fignumber()` raises `ValueError` (no number in `toc_fignumbers`)\n4. The warning `\"no number is assigned for table: ...\"` is emitted\n\nThis was a regression \u2014 before 3.3, ALL named tables got numbers regardless of caption, so these references worked silently.\n\n## Fix\n\nAdded a check in `_resolve_numref_xref()` (line 846-848): if the target node is an enumerable node (figtype is not `'section'`) **and** has no numfig title (`get_numfig_title()` returns `None`), silently return `contnode` without warning. This is consistent with the `assign_figure_numbers()` change that also uses `get_numfig_title()` to skip uncaptioned nodes.\n\n**Why this is correct:**\n- Captioned nodes still proceed to the fignumber lookup (and warn if orphaned \u2014 preserving that useful warning)\n- Sections are explicitly excluded (`figtype != 'section'`) since they always have titles but may still lack numbers, and the existing section warning is expected behavior\n- All existing tests still pass since they only check for section-level \"no number assigned\" warnings",
+  "total_cost_usd": 5.612937050000004,
+  "num_turns": 83
+}

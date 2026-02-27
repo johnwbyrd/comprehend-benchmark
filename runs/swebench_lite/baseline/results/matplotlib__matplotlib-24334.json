@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 74,
+  "git_diff": "diff --git a/lib/matplotlib/axis.py b/lib/matplotlib/axis.py\nindex af0815d41d..28dbaa06de 100644\n--- a/lib/matplotlib/axis.py\n+++ b/lib/matplotlib/axis.py\n@@ -2021,6 +2021,9 @@ class Axis(martist.Artist):\n         other limits, you should set the limits explicitly after setting the\n         ticks.\n         \"\"\"\n+        if kwargs and labels is None:\n+            raise ValueError(\n+                \"Passing 'kwargs' requires 'labels' to be provided as well.\")\n         result = self._set_tick_locations(ticks, minor=minor)\n         if labels is not None:\n             self.set_ticklabels(labels, minor=minor, **kwargs)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 71586,
+    "duration_api_ms": 74895,
+    "num_turns": 17,
+    "result": "The fix is clean and minimal. Here's a summary of the change:\n\n**Problem:** In `Axis.set_ticks`, `**kwargs` (Text properties for tick labels) were silently ignored when `labels` was not provided. This meant invalid kwargs like `ax.set_xticks([0, 1], xticklabels=[\"a\", \"b\"])` would do nothing without any error or warning.\n\n**Fix:** Added a check at the top of `set_ticks` that raises a `ValueError` if `kwargs` are passed without `labels`. The check `if kwargs and labels is None` ensures:\n- Passing kwargs without labels raises `ValueError: \"Passing 'kwargs' requires 'labels' to be provided as well.\"`\n- Passing kwargs with labels continues to work normally (delegated to `set_ticklabels`)\n- Calling without kwargs or labels continues to work normally\n\nThe `colorbar.py` and `_secondary_axes.py` overrides both delegate to this `axis.py` implementation, so they're covered automatically.",
+    "stop_reason": null,
+    "session_id": "84a9bb4e-0892-42c4-8aa6-760bef194254",
+    "total_cost_usd": 0.42454274999999997,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 14337,
+      "cache_read_input_tokens": 444953,
+      "output_tokens": 4079,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 14337,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 4079,
+        "cacheReadInputTokens": 444953,
+        "cacheCreationInputTokens": 14337,
+        "webSearchRequests": 0,
+        "costUSD": 0.41414775,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 9895,
+        "outputTokens": 100,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.010395000000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "f3fc1814-6813-40bb-a304-3431b49b870e"
+  },
+  "session_id": "84a9bb4e-0892-42c4-8aa6-760bef194254",
+  "result_text": "The fix is clean and minimal. Here's a summary of the change:\n\n**Problem:** In `Axis.set_ticks`, `**kwargs` (Text properties for tick labels) were silently ignored when `labels` was not provided. This meant invalid kwargs like `ax.set_xticks([0, 1], xticklabels=[\"a\", \"b\"])` would do nothing without any error or warning.\n\n**Fix:** Added a check at the top of `set_ticks` that raises a `ValueError` if `kwargs` are passed without `labels`. The check `if kwargs and labels is None` ensures:\n- Passing kwargs without labels raises `ValueError: \"Passing 'kwargs' requires 'labels' to be provided as well.\"`\n- Passing kwargs with labels continues to work normally (delegated to `set_ticklabels`)\n- Calling without kwargs or labels continues to work normally\n\nThe `colorbar.py` and `_secondary_axes.py` overrides both delegate to this `axis.py` implementation, so they're covered automatically.",
+  "total_cost_usd": 0.42454274999999997,
+  "num_turns": 17
+}

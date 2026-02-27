@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 1389,
+  "git_diff": "diff --git a/sphinx/ext/autodoc/__init__.py b/sphinx/ext/autodoc/__init__.py\nindex 171a3e7b0..5c958ad05 100644\n--- a/sphinx/ext/autodoc/__init__.py\n+++ b/sphinx/ext/autodoc/__init__.py\n@@ -1702,7 +1702,7 @@ class DataDocumenter(ModuleLevelDocumenter):\n         if not self.options.annotation:\n             # obtain annotation for this data\n             try:\n-                annotations = get_type_hints(self.parent)\n+                annotations = get_type_hints(self.parent, None, self.config.autodoc_type_aliases)\n             except NameError:\n                 # Failed to evaluate ForwardRef (maybe TYPE_CHECKING)\n                 annotations = safe_getattr(self.parent, '__annotations__', {})\n@@ -2093,7 +2093,7 @@ class AttributeDocumenter(DocstringStripSignatureMixin, ClassLevelDocumenter):\n         if not self.options.annotation:\n             # obtain type annotation for this attribute\n             try:\n-                annotations = get_type_hints(self.parent)\n+                annotations = get_type_hints(self.parent, None, self.config.autodoc_type_aliases)\n             except NameError:\n                 # Failed to evaluate ForwardRef (maybe TYPE_CHECKING)\n                 annotations = safe_getattr(self.parent, '__annotations__', {})\ndiff --git a/tests/roots/test-ext-autodoc/target/annotations.py b/tests/roots/test-ext-autodoc/target/annotations.py\nindex 691176b08..9a9c0d758 100644\n--- a/tests/roots/test-ext-autodoc/target/annotations.py\n+++ b/tests/roots/test-ext-autodoc/target/annotations.py\n@@ -4,6 +4,16 @@ from typing import overload\n \n myint = int\n \n+#: blah blah blah\n+var: myint\n+\n+\n+class Class:\n+    \"\"\"docstring\"\"\"\n+\n+    #: blah blah blah\n+    attr: myint\n+\n \n def sum(x: myint, y: myint) -> myint:\n     \"\"\"docstring\"\"\"\ndiff --git a/tests/test_ext_autodoc_configs.py b/tests/test_ext_autodoc_configs.py\nindex 3d1005ac0..4cb7da9d8 100644\n--- a/tests/test_ext_autodoc_configs.py\n+++ b/tests/test_ext_autodoc_configs.py\n@@ -700,6 +700,19 @@ def test_autodoc_type_aliases(app):\n         '.. py:module:: target.annotations',\n         '',\n         '',\n+        '.. py:class:: Class()',\n+        '   :module: target.annotations',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '   .. py:attribute:: Class.attr',\n+        '      :module: target.annotations',\n+        '      :type: int',\n+        '',\n+        '      blah blah blah',\n+        '',\n+        '',\n         '.. py:function:: mult(x: int, y: int) -> int',\n         '                 mult(x: float, y: float) -> float',\n         '   :module: target.annotations',\n@@ -712,6 +725,13 @@ def test_autodoc_type_aliases(app):\n         '',\n         '   docstring',\n         '',\n+        '',\n+        '.. py:data:: var',\n+        '   :module: target.annotations',\n+        '   :type: int',\n+        '',\n+        '   blah blah blah',\n+        '',\n     ]\n \n     # define aliases\n@@ -722,6 +742,19 @@ def test_autodoc_type_aliases(app):\n         '.. py:module:: target.annotations',\n         '',\n         '',\n+        '.. py:class:: Class()',\n+        '   :module: target.annotations',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '   .. py:attribute:: Class.attr',\n+        '      :module: target.annotations',\n+        '      :type: myint',\n+        '',\n+        '      blah blah blah',\n+        '',\n+        '',\n         '.. py:function:: mult(x: myint, y: myint) -> myint',\n         '                 mult(x: float, y: float) -> float',\n         '   :module: target.annotations',\n@@ -734,6 +767,13 @@ def test_autodoc_type_aliases(app):\n         '',\n         '   docstring',\n         '',\n+        '',\n+        '.. py:data:: var',\n+        '   :module: target.annotations',\n+        '   :type: myint',\n+        '',\n+        '   blah blah blah',\n+        '',\n     ]\n \n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 3624,
+    "duration_api_ms": 1404751,
+    "num_turns": 1,
+    "result": "Stale background task - already read this output earlier (it confirmed `<Signature ()>`). The fix is complete.",
+    "stop_reason": null,
+    "session_id": "eb385e6d-4de9-4ed1-87e7-433b28800d06",
+    "total_cost_usd": 6.646196949999999,
+    "usage": {
+      "input_tokens": 3,
+      "cache_creation_input_tokens": 340,
+      "cache_read_input_tokens": 131750,
+      "output_tokens": 29,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 340,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 144,
+        "outputTokens": 51912,
+        "cacheReadInputTokens": 8996266,
+        "cacheCreationInputTokens": 109376,
+        "webSearchRequests": 0,
+        "costUSD": 6.480253000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 40910,
+        "outputTokens": 7688,
+        "cacheReadInputTokens": 538952,
+        "cacheCreationInputTokens": 26159,
+        "webSearchRequests": 0,
+        "costUSD": 0.16594395000000006,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "6f75e1ce-aa33-4fd1-813f-6fea9bc13100"
+  },
+  "session_id": "eb385e6d-4de9-4ed1-87e7-433b28800d06",
+  "result_text": "Stale background task - already read this output earlier (it confirmed `<Signature ()>`). The fix is complete.",
+  "total_cost_usd": 6.646196949999999,
+  "num_turns": 1
+}

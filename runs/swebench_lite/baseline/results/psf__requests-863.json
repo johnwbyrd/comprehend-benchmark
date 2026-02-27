@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 31,
+  "git_diff": "diff --git a/requests/models.py b/requests/models.py\nindex d8456375..404b4bf5 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -463,7 +463,10 @@ class Request(object):\n     def register_hook(self, event, hook):\n         \"\"\"Properly register a hook.\"\"\"\n \n-        self.hooks[event].append(hook)\n+        if isinstance(hook, list):\n+            self.hooks[event].extend(hook)\n+        else:\n+            self.hooks[event].append(hook)\n \n     def deregister_hook(self, event, hook):\n         \"\"\"Deregister a previously registered hook.\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 28366,
+    "duration_api_ms": 27998,
+    "num_turns": 7,
+    "result": "The fix is in `register_hook` at `models.py:463`. When `hook` is a list, it now uses `.extend()` to add each callable individually to the hooks list, rather than `.append()` which would nest the list inside the list.\n\nThis means both of these usage patterns now work correctly:\n\n```python\n# Single hook (existing behavior unchanged)\nRequest('GET', url, hooks={'response': my_hook})\n\n# List of hooks (new behavior)\nRequest('GET', url, hooks={'response': [hook1, hook2]})\n```\n\nThe fix also applies when calling `register_hook` directly with a list, which makes the API more flexible and consistent.",
+    "stop_reason": null,
+    "session_id": "27c86251-daff-46ce-8809-1ff154ed27c9",
+    "total_cost_usd": 0.18011775000000002,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 11107,
+      "cache_read_input_tokens": 157468,
+      "output_tokens": 1277,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 11107,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 8,
+        "outputTokens": 1277,
+        "cacheReadInputTokens": 157468,
+        "cacheCreationInputTokens": 11107,
+        "webSearchRequests": 0,
+        "costUSD": 0.18011775000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "128336b9-5b4d-4971-8122-545725aeb1b2"
+  },
+  "session_id": "27c86251-daff-46ce-8809-1ff154ed27c9",
+  "result_text": "The fix is in `register_hook` at `models.py:463`. When `hook` is a list, it now uses `.extend()` to add each callable individually to the hooks list, rather than `.append()` which would nest the list inside the list.\n\nThis means both of these usage patterns now work correctly:\n\n```python\n# Single hook (existing behavior unchanged)\nRequest('GET', url, hooks={'response': my_hook})\n\n# List of hooks (new behavior)\nRequest('GET', url, hooks={'response': [hook1, hook2]})\n```\n\nThe fix also applies when calling `register_hook` directly with a list, which makes the API more flexible and consistent.",
+  "total_cost_usd": 0.18011775000000002,
+  "num_turns": 7
+}

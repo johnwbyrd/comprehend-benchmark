@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 49,
+  "git_diff": "diff --git a/lib/mpl_toolkits/mplot3d/axes3d.py b/lib/mpl_toolkits/mplot3d/axes3d.py\nindex 9db44b7994..5479bc1af0 100644\n--- a/lib/mpl_toolkits/mplot3d/axes3d.py\n+++ b/lib/mpl_toolkits/mplot3d/axes3d.py\n@@ -387,6 +387,8 @@ class Axes3D(Axes):\n \n     @martist.allow_rasterization\n     def draw(self, renderer):\n+        if not self.get_visible():\n+            return\n         self._unstale_viewLim()\n \n         # draw the background patch\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 47479,
+    "duration_api_ms": 47999,
+    "num_turns": 5,
+    "result": "The fix is in place. \n\n**Root cause:** `Axes3D.draw()` in `lib/mpl_toolkits/mplot3d/axes3d.py` overrides the parent `Axes.draw()` but didn't replicate the visibility guard that exists at the top of the parent method (`_base.py:3022`). Since the 3D draw method runs first (before `super().draw(renderer)` is called), the visibility check in the parent was never reached for the 3D-specific drawing code, and the axes background patch and all artists were rendered unconditionally.\n\n**Fix:** Added `if not self.get_visible(): return` at the top of `Axes3D.draw()`, matching the pattern in `Axes.draw()`.",
+    "stop_reason": null,
+    "session_id": "80901842-2a16-44cd-861d-aad5b0cfa8f1",
+    "total_cost_usd": 0.17591935,
+    "usage": {
+      "input_tokens": 7,
+      "cache_creation_input_tokens": 7352,
+      "cache_read_input_tokens": 120888,
+      "output_tokens": 1119,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 7352,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 7,
+        "outputTokens": 1119,
+        "cacheReadInputTokens": 120888,
+        "cacheCreationInputTokens": 7352,
+        "webSearchRequests": 0,
+        "costUSD": 0.134404,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 776,
+        "outputTokens": 2413,
+        "cacheReadInputTokens": 154656,
+        "cacheCreationInputTokens": 10567,
+        "webSearchRequests": 0,
+        "costUSD": 0.04151535,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "3072bf57-73b9-47bd-8a28-b1c13b8aebf1"
+  },
+  "session_id": "80901842-2a16-44cd-861d-aad5b0cfa8f1",
+  "result_text": "The fix is in place. \n\n**Root cause:** `Axes3D.draw()` in `lib/mpl_toolkits/mplot3d/axes3d.py` overrides the parent `Axes.draw()` but didn't replicate the visibility guard that exists at the top of the parent method (`_base.py:3022`). Since the 3D draw method runs first (before `super().draw(renderer)` is called), the visibility check in the parent was never reached for the 3D-specific drawing code, and the axes background patch and all artists were rendered unconditionally.\n\n**Fix:** Added `if not self.get_visible(): return` at the top of `Axes3D.draw()`, matching the pattern in `Axes.draw()`.",
+  "total_cost_usd": 0.17591935,
+  "num_turns": 5
+}

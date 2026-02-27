@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 27,
+  "git_diff": "diff --git a/requests/sessions.py b/requests/sessions.py\nindex 425db22c..4bb6c728 100644\n--- a/requests/sessions.py\n+++ b/requests/sessions.py\n@@ -86,9 +86,10 @@ class SessionRedirectMixin(object):\n         \"\"\"Receives a Response. Returns a generator of Responses.\"\"\"\n \n         i = 0\n+        prepared_request = req.copy()\n \n         while resp.is_redirect:\n-            prepared_request = req.copy()\n+            prepared_request = prepared_request.copy()\n \n             resp.content  # Consume socket so it can be released\n \n@@ -99,7 +100,7 @@ class SessionRedirectMixin(object):\n             resp.close()\n \n             url = resp.headers['location']\n-            method = req.method\n+            method = prepared_request.method\n \n             # Handle redirection without scheme (see: RFC 1808 Section 4)\n             if url.startswith('//'):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 25356,
+    "duration_api_ms": 24922,
+    "num_turns": 5,
+    "result": "The fix:\n\n1. **Initialize `prepared_request = req.copy()`** before the loop, so we have a mutable copy to carry state across iterations.\n2. **Copy `prepared_request` each iteration** (instead of `req`) \u2014 this preserves the method changes (e.g. POST\u2192GET from a 303) for subsequent redirects.\n3. **Read `method = prepared_request.method`** (instead of `req.method`) \u2014 same reasoning, picks up any method already changed in a prior iteration.\n\nNow in the scenario from the issue:\n- Iteration 1: 303 See Other \u2192 POST becomes GET, `prepared_request.method = 'GET'`\n- Iteration 2: starts from `prepared_request.copy()`, so `method = 'GET'`; 307 Temporary Redirect preserves it \u2192 stays GET \u2713",
+    "stop_reason": null,
+    "session_id": "47224dc1-6715-4377-a56e-0997e704555a",
+    "total_cost_usd": 0.1306925,
+    "usage": {
+      "input_tokens": 7,
+      "cache_creation_input_tokens": 7582,
+      "cache_read_input_tokens": 116790,
+      "output_tokens": 995,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 7582,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 7,
+        "outputTokens": 995,
+        "cacheReadInputTokens": 116790,
+        "cacheCreationInputTokens": 7582,
+        "webSearchRequests": 0,
+        "costUSD": 0.1306925,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "614a17ff-4dd9-49d4-ab70-240424799ca9"
+  },
+  "session_id": "47224dc1-6715-4377-a56e-0997e704555a",
+  "result_text": "The fix:\n\n1. **Initialize `prepared_request = req.copy()`** before the loop, so we have a mutable copy to carry state across iterations.\n2. **Copy `prepared_request` each iteration** (instead of `req`) \u2014 this preserves the method changes (e.g. POST\u2192GET from a 303) for subsequent redirects.\n3. **Read `method = prepared_request.method`** (instead of `req.method`) \u2014 same reasoning, picks up any method already changed in a prior iteration.\n\nNow in the scenario from the issue:\n- Iteration 1: 303 See Other \u2192 POST becomes GET, `prepared_request.method = 'GET'`\n- Iteration 2: starts from `prepared_request.copy()`, so `method = 'GET'`; 307 Temporary Redirect preserves it \u2192 stays GET \u2713",
+  "total_cost_usd": 0.1306925,
+  "num_turns": 5
+}

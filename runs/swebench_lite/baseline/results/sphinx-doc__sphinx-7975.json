@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 282,
+  "git_diff": "diff --git a/sphinx/environment/adapters/indexentries.py b/sphinx/environment/adapters/indexentries.py\nindex 5af213932..51d84fbfc 100644\n--- a/sphinx/environment/adapters/indexentries.py\n+++ b/sphinx/environment/adapters/indexentries.py\n@@ -99,7 +99,8 @@ class IndexEntries:\n                 subentry[0].sort(key=keyfunc0)  # type: ignore\n \n         # sort the index entries; put all symbols at the front, even those\n-        # following the letters in ASCII, this is where the chr(127) comes from\n+        # following the letters in Unicode, this is where the chr(127) and\n+        # chr(0) come from\n         def keyfunc(entry: Tuple[str, List]) -> Tuple[str, str]:\n             key, (void, void, category_key) = entry\n             if category_key:\n@@ -110,6 +111,9 @@ class IndexEntries:\n                 lckey = lckey[1:]\n             if lckey[0:1].isalpha() or lckey.startswith('_'):\n                 lckey = chr(127) + lckey\n+            else:\n+                # put all other symbols at the front\n+                lckey = chr(0) + lckey\n             # ensure a determinstic order *within* letters by also sorting on\n             # the entry itself\n             return (lckey, entry[0])\n@@ -152,6 +156,8 @@ class IndexEntries:\n                 key = key[1:]\n             if key[0:1].isalpha() or key.startswith('_'):\n                 key = chr(127) + key\n+            else:\n+                key = chr(0) + key\n             return key\n \n         # group the entries by letter\ndiff --git a/tests/test_environment_indexentries.py b/tests/test_environment_indexentries.py\nindex 7f6003d54..bc6f6ae73 100644\n--- a/tests/test_environment_indexentries.py\n+++ b/tests/test_environment_indexentries.py\n@@ -41,6 +41,24 @@ def test_create_single_index(app):\n     assert index[5] == ('\u05ea', [('\u200f\u05ea\u05d9\u05e8\u05d1\u05e2\u200e', [[('', '#index-7')], [], None])])\n \n \n+@pytest.mark.sphinx('dummy', freshenv=True)\n+def test_create_single_index_with_unicode_symbols(app):\n+    # Test that symbols with Unicode code points > 127 (like \u00a3, \u2190) are grouped\n+    # with other symbols (like @) in a single \"Symbols\" section, not split into\n+    # two separate sections around the alphabetical entries.\n+    text = (\".. index:: @at-symbol\\n\"\n+            \".. index:: \u00a3pound\\n\"\n+            \".. index:: \u2190arrow\\n\"\n+            \".. index:: normal\\n\")\n+    restructuredtext.parse(app, text)\n+    index = IndexEntries(app.env).create_index(app.builder)\n+    assert len(index) == 2\n+    assert index[0] == ('Symbols', [('@at-symbol', [[('', '#index-0')], [], None]),\n+                                    ('\u00a3pound', [[('', '#index-1')], [], None]),\n+                                    ('\u2190arrow', [[('', '#index-2')], [], None])])\n+    assert index[1] == ('N', [('normal', [[('', '#index-3')], [], None])])\n+\n+\n @pytest.mark.sphinx('dummy', freshenv=True)\n def test_create_pair_index(app):\n     text = (\".. index:: pair: docutils; reStructuredText\\n\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 279053,
+    "duration_api_ms": 287064,
+    "num_turns": 21,
+    "result": "The fix is in place. Here's a summary of the changes:\n\n**Root cause:** In `sphinx/environment/adapters/indexentries.py`, the `keyfunc` function (used to sort index entries before grouping) prepended `chr(127)` to alphabetical entries to make them sort after symbols. However, Unicode symbols with code points greater than 127 (like `\u00a3` = U+00A3, `\u2190` = U+2190) naturally sort after `chr(127)` (U+007F), placing them after alphabetical entries. Since Python's `itertools.groupby` only groups **consecutive** elements with the same key, the \"Symbols\" key appeared twice \u2014 once for `@` (which sorted before letters) and once for `\u00a3`/`\u2190` (which sorted after letters).\n\n**Fix:** Added an `else` branch to `keyfunc` (and `keyfunc2` for sub-entries) that prefixes non-alpha, non-underscore characters with `chr(0)`. Since `chr(0)` (U+0000) is less than `chr(127)` (U+007F), all symbols now consistently sort before alphabetical entries, resulting in a single consecutive \"Symbols\" group that `groupby` correctly merges into one section.",
+    "stop_reason": null,
+    "session_id": "165de6ce-401e-4c01-8590-df6bf9515f14",
+    "total_cost_usd": 1.0078895,
+    "usage": {
+      "input_tokens": 23,
+      "cache_creation_input_tokens": 28499,
+      "cache_read_input_tokens": 829213,
+      "output_tokens": 13051,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 28499,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 23,
+        "outputTokens": 13051,
+        "cacheReadInputTokens": 829213,
+        "cacheCreationInputTokens": 28499,
+        "webSearchRequests": 0,
+        "costUSD": 0.9191152500000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 25741,
+        "outputTokens": 4552,
+        "cacheReadInputTokens": 161320,
+        "cacheCreationInputTokens": 19313,
+        "webSearchRequests": 0,
+        "costUSD": 0.08877425000000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "c7a96aaf-26ff-4e3f-b651-36cc55ced9dc"
+  },
+  "session_id": "165de6ce-401e-4c01-8590-df6bf9515f14",
+  "result_text": "The fix is in place. Here's a summary of the changes:\n\n**Root cause:** In `sphinx/environment/adapters/indexentries.py`, the `keyfunc` function (used to sort index entries before grouping) prepended `chr(127)` to alphabetical entries to make them sort after symbols. However, Unicode symbols with code points greater than 127 (like `\u00a3` = U+00A3, `\u2190` = U+2190) naturally sort after `chr(127)` (U+007F), placing them after alphabetical entries. Since Python's `itertools.groupby` only groups **consecutive** elements with the same key, the \"Symbols\" key appeared twice \u2014 once for `@` (which sorted before letters) and once for `\u00a3`/`\u2190` (which sorted after letters).\n\n**Fix:** Added an `else` branch to `keyfunc` (and `keyfunc2` for sub-entries) that prefixes non-alpha, non-underscore characters with `chr(0)`. Since `chr(0)` (U+0000) is less than `chr(127)` (U+007F), all symbols now consistently sort before alphabetical entries, resulting in a single consecutive \"Symbols\" group that `groupby` correctly merges into one section.",
+  "total_cost_usd": 1.0078895,
+  "num_turns": 21
+}

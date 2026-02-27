@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 126,
+  "git_diff": "diff --git a/lib/matplotlib/artist.py b/lib/matplotlib/artist.py\nindex 1f33b9d3ec..8b17643497 100644\n--- a/lib/matplotlib/artist.py\n+++ b/lib/matplotlib/artist.py\n@@ -1304,10 +1304,14 @@ class Artist:\n             normed = self.norm(data)\n             if np.isfinite(normed):\n                 # Midpoints of neighboring color intervals.\n-                neighbors = self.norm.inverse(\n-                    (int(self.norm(data) * n) + np.array([0, 1])) / n)\n-                delta = abs(neighbors - data).max()\n-                g_sig_digits = cbook._g_sig_digits(data, delta)\n+                try:\n+                    neighbors = self.norm.inverse(\n+                        (int(self.norm(data) * n) + np.array([0, 1])) / n)\n+                    delta = abs(neighbors - data).max()\n+                    g_sig_digits = cbook._g_sig_digits(data, delta)\n+                except ValueError:\n+                    # Norm is not invertible.\n+                    g_sig_digits = 3\n             else:\n                 g_sig_digits = 3  # Consistent with default below.\n             return \"[{:-#.{}g}]\".format(data, g_sig_digits)\ndiff --git a/lib/matplotlib/tests/test_image.py b/lib/matplotlib/tests/test_image.py\nindex e8e90b7680..b85b3346c3 100644\n--- a/lib/matplotlib/tests/test_image.py\n+++ b/lib/matplotlib/tests/test_image.py\n@@ -1086,6 +1086,14 @@ def test_image_cursor_formatting():\n     assert im.format_cursor_data(data) == '[nan]'\n \n \n+def test_image_cursor_formatting_with_boundary_norm():\n+    fig, ax = plt.subplots()\n+    norm = mpl.colors.BoundaryNorm(np.linspace(-4, 4, 5), 256)\n+    im = ax.imshow(np.zeros((4, 4)), norm=norm)\n+    # BoundaryNorm is not invertible; format_cursor_data should not crash.\n+    assert im.format_cursor_data(1.0) == '[1.0]'\n+\n+\n @check_figures_equal()\n def test_image_array_alpha(fig_test, fig_ref):\n     \"\"\"Per-pixel alpha channel test.\"\"\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 2323,
+    "duration_api_ms": 127541,
+    "num_turns": 1,
+    "result": "Same result \u2014 the environment lacks compiled C extensions so tests can't run. The fix is complete and correct as described above.",
+    "stop_reason": null,
+    "session_id": "d652da78-62d3-45dc-ad6d-f90ca62ba1d0",
+    "total_cost_usd": 0.8065665000000001,
+    "usage": {
+      "input_tokens": 3,
+      "cache_creation_input_tokens": 305,
+      "cache_read_input_tokens": 40446,
+      "output_tokens": 28,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 305,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 37,
+        "outputTokens": 5050,
+        "cacheReadInputTokens": 1036066,
+        "cacheCreationInputTokens": 21510,
+        "webSearchRequests": 0,
+        "costUSD": 0.7789055000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 24121,
+        "outputTokens": 708,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.027661000000000005,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "9fcdf3df-9bf6-4e3d-b7d3-951896a4a86f"
+  },
+  "session_id": "d652da78-62d3-45dc-ad6d-f90ca62ba1d0",
+  "result_text": "Same result \u2014 the environment lacks compiled C extensions so tests can't run. The fix is complete and correct as described above.",
+  "total_cost_usd": 0.8065665000000001,
+  "num_turns": 1
+}

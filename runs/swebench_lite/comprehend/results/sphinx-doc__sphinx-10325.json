@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 1194,
+  "git_diff": "diff --git a/doc/usage/extensions/autodoc.rst b/doc/usage/extensions/autodoc.rst\nindex e3d551dd4..62d19038c 100644\n--- a/doc/usage/extensions/autodoc.rst\n+++ b/doc/usage/extensions/autodoc.rst\n@@ -252,14 +252,17 @@ inserting them into the page source under a suitable :rst:dir:`py:module`,\n      This can be combined with ``undoc-members`` to document *all* available\n      members of the class or module.\n \n-     It can take an ancestor class not to document inherited members from it.\n-     By default, members of ``object`` class are not documented.  To show them\n-     all, give ``None`` to the option.\n+     It can take a comma-separated list of ancestor class names to ignore when\n+     collecting inherited members.  By default, members of the ``object`` class\n+     are not documented.  To show them all, give ``None`` to the option.\n \n      For example; If your class ``Foo`` is derived from ``list`` class and\n-     you don't want to document ``list.__len__()``, you should specify a\n-     option ``:inherited-members: list`` to avoid special members of list\n-     class.\n+     you don't want to document ``list.__len__()``, you should specify the\n+     option ``:inherited-members: list`` to avoid members of the list class.\n+\n+     Another example; If your class ``Bar`` inherits from both ``MyMixin`` and\n+     ``list`` and you want to ignore members from both, use a comma-separated\n+     list: ``:inherited-members: MyMixin, list``.\n \n      Another example; If your class Foo has ``__str__`` special method and\n      autodoc directive has both ``inherited-members`` and ``special-members``,\n@@ -275,6 +278,10 @@ inserting them into the page source under a suitable :rst:dir:`py:module`,\n \n         It takes an ancestor class name as an argument.\n \n+     .. versionchanged:: 5.0\n+\n+        It can now take a comma-separated list of ancestor class names.\n+\n    * It's possible to override the signature for explicitly documented callable\n      objects (functions, methods, classes) with the regular syntax that will\n      override the signature gained from introspection::\ndiff --git a/sphinx/ext/autodoc/__init__.py b/sphinx/ext/autodoc/__init__.py\nindex 62631f7ff..0d89ee7e7 100644\n--- a/sphinx/ext/autodoc/__init__.py\n+++ b/sphinx/ext/autodoc/__init__.py\n@@ -110,11 +110,11 @@ def exclude_members_option(arg: Any) -> Union[object, Set[str]]:\n \n \n def inherited_members_option(arg: Any) -> Union[object, Set[str]]:\n-    \"\"\"Used to convert the :members: option to auto directives.\"\"\"\n+    \"\"\"Used to convert the :inherited-members: option to auto directives.\"\"\"\n     if arg in (None, True):\n-        return 'object'\n+        return {'object'}\n     else:\n-        return arg\n+        return {x.strip() for x in arg.split(',') if x.strip()}\n \n \n def member_order_option(arg: Any) -> Optional[str]:\n@@ -682,7 +682,9 @@ class Documenter:\n         def is_filtered_inherited_member(name: str, obj: Any) -> bool:\n             if inspect.isclass(self.object):\n                 for cls in self.object.__mro__:\n-                    if cls.__name__ == self.options.inherited_members and cls != self.object:\n+                    if (isinstance(self.options.inherited_members, set) and\n+                            cls.__name__ in self.options.inherited_members and\n+                            cls != self.object):\n                         # given member is a member of specified *super class*\n                         return True\n                     elif name in cls.__dict__:\ndiff --git a/tests/roots/test-ext-autodoc/target/inheritance.py b/tests/roots/test-ext-autodoc/target/inheritance.py\nindex ffac84bb6..3fb8f3494 100644\n--- a/tests/roots/test-ext-autodoc/target/inheritance.py\n+++ b/tests/roots/test-ext-autodoc/target/inheritance.py\n@@ -15,3 +15,14 @@ class Derived(Base):\n     def inheritedmeth(self):\n         # no docstring here\n         pass\n+\n+\n+class MyMixin:\n+    def mixin(self):\n+        \"\"\"Mixin method.\"\"\"\n+\n+\n+class Derived2(MyMixin, Base):\n+    def inheritedmeth(self):\n+        # no docstring here\n+        pass\ndiff --git a/tests/test_ext_autodoc.py b/tests/test_ext_autodoc.py\nindex 1f1c7e9e7..917cc2d07 100644\n--- a/tests/test_ext_autodoc.py\n+++ b/tests/test_ext_autodoc.py\n@@ -794,6 +794,29 @@ def test_autodoc_inherited_members_None(app):\n     assert '   .. py:method:: Derived.__str__()' in actual\n \n \n+@pytest.mark.sphinx('html', testroot='ext-autodoc')\n+def test_autodoc_inherited_members_Base_and_mixin(app):\n+    options = {\"members\": None,\n+               \"inherited-members\": \"Base, MyMixin\"}\n+\n+    # With both Base and MyMixin in inherited-members, members from both are filtered\n+    actual = do_autodoc(app, 'class', 'target.inheritance.Derived2', options)\n+    assert '   .. py:method:: Derived2.mixin()' not in actual\n+    assert '   .. py:method:: Derived2.inheritedclassmeth()' not in actual\n+\n+\n+@pytest.mark.sphinx('html', testroot='ext-autodoc')\n+def test_autodoc_inherited_members_Base_only_on_Derived2(app):\n+    options = {\"members\": None,\n+               \"inherited-members\": \"Base\"}\n+\n+    # With only Base in inherited-members, mixin() from MyMixin is shown\n+    # but methods from Base are filtered\n+    actual = do_autodoc(app, 'class', 'target.inheritance.Derived2', options)\n+    assert '   .. py:method:: Derived2.mixin()' in actual\n+    assert '   .. py:method:: Derived2.inheritedclassmeth()' not in actual\n+\n+\n @pytest.mark.sphinx('html', testroot='ext-autodoc')\n def test_autodoc_imported_members(app):\n     options = {\"members\": None,\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 5782,
+    "duration_api_ms": 1238771,
+    "num_turns": 2,
+    "result": "Empty output \u2014 confirms `roman` package is not in the uv cache at all. The implementation is complete. The test environment is missing required packages that prevent test execution, but the code changes are correct and complete.",
+    "stop_reason": null,
+    "session_id": "48ed3182-c7b5-4646-b116-3145d2b410e8",
+    "total_cost_usd": 8.059800450000004,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 448,
+      "cache_read_input_tokens": 282597,
+      "output_tokens": 152,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 448,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 139,
+        "outputTokens": 72186,
+        "cacheReadInputTokens": 10528969,
+        "cacheCreationInputTokens": 122356,
+        "webSearchRequests": 0,
+        "costUSD": 7.834554500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 91978,
+        "outputTokens": 13863,
+        "cacheReadInputTokens": 389142,
+        "cacheCreationInputTokens": 20031,
+        "webSearchRequests": 0,
+        "costUSD": 0.22524594999999992,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "3571ef40-367b-42a9-9b8d-0630f8e9d587"
+  },
+  "session_id": "48ed3182-c7b5-4646-b116-3145d2b410e8",
+  "result_text": "Empty output \u2014 confirms `roman` package is not in the uv cache at all. The implementation is complete. The test environment is missing required packages that prevent test execution, but the code changes are correct and complete.",
+  "total_cost_usd": 8.059800450000004,
+  "num_turns": 2
+}

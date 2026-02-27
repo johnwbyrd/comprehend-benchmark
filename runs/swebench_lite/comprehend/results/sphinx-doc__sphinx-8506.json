@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 492,
+  "git_diff": "diff --git a/sphinx/domains/std.py b/sphinx/domains/std.py\nindex c87217c56..e1273757e 100644\n--- a/sphinx/domains/std.py\n+++ b/sphinx/domains/std.py\n@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)\n \n \n # RE for option descriptions\n-option_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n+option_desc_re = re.compile(r'((?:/|--|-|\\+)?\\[[^\\]]*\\][^\\s]*|(?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n # RE for grammar tokens\n token_re = re.compile(r'`(\\w+)`', re.U)\n \ndiff --git a/tests/test_domain_std.py b/tests/test_domain_std.py\nindex 7ee1d6c07..79a5dcdfd 100644\n--- a/tests/test_domain_std.py\n+++ b/tests/test_domain_std.py\n@@ -327,6 +327,19 @@ def test_multiple_cmdoptions(app):\n     assert domain.progoptions[('cmd', '--output')] == ('index', 'cmdoption-cmd-o')\n \n \n+def test_cmdoption_with_optional_prefix(app, warning):\n+    # Test that options with bracket notation like [enable=]PATTERN are accepted\n+    # without warnings (regression test for GitHub issue #8517)\n+    text = (\".. option:: [enable=]PATTERN\\n\")\n+    domain = app.env.get_domain('std')\n+    doctree = restructuredtext.parse(app, text)\n+    assert_node(doctree, (addnodes.index,\n+                          [desc, ([desc_signature, ([desc_name, \"[enable=]PATTERN\"],\n+                                                    [desc_addname, \"\"])],\n+                                  [desc_content, ()])]))\n+    assert warning.getvalue() == ''\n+\n+\n @pytest.mark.skipif(docutils.__version_info__ < (0, 13),\n                     reason='docutils-0.13 or above is required')\n @pytest.mark.sphinx(testroot='productionlist')\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 489918,
+    "duration_api_ms": 488266,
+    "num_turns": 47,
+    "result": "The fix is clean and complete. Here's a summary of the changes:\n\n## Summary\n\n**Root cause:** Commit `1e7d9269e` modified `option_desc_re` to support `-j[=N]` syntax by adding `[` to the excluded character class (`[^\\s=[]+`). This broke options starting with `[` like `[enable=]PATTERN`.\n\n**Fix:** Modified the regex in `sphinx/domains/std.py` to add an alternative pattern that handles bracket-prefixed options:\n\n**Before:**\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\n\n**After:**\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?\\[[^\\]]*\\][^\\s]*|(?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\n\nThe new regex adds a first alternative `(?:/|--|-|\\+)?\\[[^\\]]*\\][^\\s]*` that matches options starting with `[...]` (e.g., `[enable=]PATTERN`, `[opt]`). The second alternative is the original pattern for standard options.\n\nThis handles all cases correctly:\n- `[enable=]PATTERN` \u2192 optname=`[enable=]PATTERN`, args=`` \u2713\n- `-j[=N]` \u2192 optname=`-j`, args=`[=N]` \u2713  \n- `--opt=value` \u2192 optname=`--opt`, args=`=value` \u2713\n- `-o file` \u2192 optname=`-o`, args=` file` \u2713\n\nA test case `test_cmdoption_with_optional_prefix` was added to `tests/test_domain_std.py` to verify the fix and prevent regressions.",
+    "stop_reason": null,
+    "session_id": "d840d43c-e6bb-4f7b-a3b7-c2028cfebb44",
+    "total_cost_usd": 2.2745543500000016,
+    "usage": {
+      "input_tokens": 46,
+      "cache_creation_input_tokens": 49837,
+      "cache_read_input_tokens": 2337550,
+      "output_tokens": 27505,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 49837,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 46,
+        "outputTokens": 27505,
+        "cacheReadInputTokens": 2337550,
+        "cacheCreationInputTokens": 49837,
+        "webSearchRequests": 0,
+        "costUSD": 2.168111250000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 37684,
+        "outputTokens": 3067,
+        "cacheReadInputTokens": 180741,
+        "cacheCreationInputTokens": 28280,
+        "webSearchRequests": 0,
+        "costUSD": 0.10644309999999996,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "135de223-3fe0-4fac-9265-48047efe8937"
+  },
+  "session_id": "d840d43c-e6bb-4f7b-a3b7-c2028cfebb44",
+  "result_text": "The fix is clean and complete. Here's a summary of the changes:\n\n## Summary\n\n**Root cause:** Commit `1e7d9269e` modified `option_desc_re` to support `-j[=N]` syntax by adding `[` to the excluded character class (`[^\\s=[]+`). This broke options starting with `[` like `[enable=]PATTERN`.\n\n**Fix:** Modified the regex in `sphinx/domains/std.py` to add an alternative pattern that handles bracket-prefixed options:\n\n**Before:**\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\n\n**After:**\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?\\[[^\\]]*\\][^\\s]*|(?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\n\nThe new regex adds a first alternative `(?:/|--|-|\\+)?\\[[^\\]]*\\][^\\s]*` that matches options starting with `[...]` (e.g., `[enable=]PATTERN`, `[opt]`). The second alternative is the original pattern for standard options.\n\nThis handles all cases correctly:\n- `[enable=]PATTERN` \u2192 optname=`[enable=]PATTERN`, args=`` \u2713\n- `-j[=N]` \u2192 optname=`-j`, args=`[=N]` \u2713  \n- `--opt=value` \u2192 optname=`--opt`, args=`=value` \u2713\n- `-o file` \u2192 optname=`-o`, args=` file` \u2713\n\nA test case `test_cmdoption_with_optional_prefix` was added to `tests/test_domain_std.py` to verify the fix and prevent regressions.",
+  "total_cost_usd": 2.2745543500000016,
+  "num_turns": 47
+}

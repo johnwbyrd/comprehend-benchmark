@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 164,
+  "git_diff": "diff --git a/lib/matplotlib/cbook.py b/lib/matplotlib/cbook.py\nindex c9699b2e21..943f28e183 100644\n--- a/lib/matplotlib/cbook.py\n+++ b/lib/matplotlib/cbook.py\n@@ -788,6 +788,15 @@ class Grouper:\n     def __init__(self, init=()):\n         self._mapping = {weakref.ref(x): [weakref.ref(x)] for x in init}\n \n+    def __getstate__(self):\n+        return list(self)\n+\n+    def __setstate__(self, state):\n+        self._mapping = {}\n+        for group in state:\n+            if group:\n+                self.join(group[0], *group[1:])\n+\n     def __contains__(self, item):\n         return weakref.ref(item) in self._mapping\n \ndiff --git a/lib/matplotlib/tests/test_figure.py b/lib/matplotlib/tests/test_figure.py\nindex 80d80f9691..edfb1425cf 100644\n--- a/lib/matplotlib/tests/test_figure.py\n+++ b/lib/matplotlib/tests/test_figure.py\n@@ -1534,6 +1534,17 @@ def test_deepcopy():\n     assert fig2.axes[0].get_xlim() == (0, 1)\n \n \n+def test_pickle_with_aligned_labels():\n+    fig = plt.figure()\n+    ax1 = fig.add_subplot(211)\n+    ax2 = fig.add_subplot(212)\n+    ax1.set_ylabel('ylabel')\n+    ax2.set_ylabel('ylabel')\n+    fig.align_labels()\n+    fig2 = pickle.loads(pickle.dumps(fig))\n+    assert len(fig2.axes) == 2\n+\n+\n def test_unpickle_with_device_pixel_ratio():\n     fig = Figure(dpi=42)\n     fig.canvas._set_device_pixel_ratio(7)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 162047,
+    "duration_api_ms": 165108,
+    "num_turns": 24,
+    "result": "The fix is minimal and correct. Here's a summary of what was done:\n\n**Root Cause:** The `Grouper` class in `lib/matplotlib/cbook.py` uses `weakref.ref` objects as keys in its `_mapping` dictionary. `weakref.ref` objects cannot be pickled, so when `fig.align_labels()` is called (which populates `_align_label_groups` with `Grouper` instances containing weakrefs to the axes), subsequent `pickle.dumps(fig)` fails with `TypeError: cannot pickle 'weakref.ReferenceType' object`.\n\n**Fix:** Added `__getstate__` and `__setstate__` methods to `Grouper` (`lib/matplotlib/cbook.py`):\n\n- `__getstate__`: Returns `list(self)` \u2014 the existing `__iter__` already yields groups as lists of real object references (not weakrefs), so this gives a clean, picklable representation.\n- `__setstate__`: Rebuilds `_mapping` from scratch using the saved groups by calling `self.join(group[0], *group[1:])` for each group.\n\nThis works correctly because when pickle serializes a figure, it serializes the axes objects and the Grouper state together. When deserializing, pickle restores the axes first (since they're referenced in the Grouper's state), and the `__setstate__` method rebuilds the weakref-based mapping pointing to those restored axes.",
+    "stop_reason": null,
+    "session_id": "95038908-35d1-4c0c-8f39-5982aac413d8",
+    "total_cost_usd": 0.9041589999999997,
+    "usage": {
+      "input_tokens": 26,
+      "cache_creation_input_tokens": 28448,
+      "cache_read_input_tokens": 915218,
+      "output_tokens": 9635,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 28448,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 26,
+        "outputTokens": 9635,
+        "cacheReadInputTokens": 915218,
+        "cacheCreationInputTokens": 28448,
+        "webSearchRequests": 0,
+        "costUSD": 0.8764139999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 24985,
+        "outputTokens": 552,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.027745,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "6b526084-0cc9-4603-993c-def718b0ad1f"
+  },
+  "session_id": "95038908-35d1-4c0c-8f39-5982aac413d8",
+  "result_text": "The fix is minimal and correct. Here's a summary of what was done:\n\n**Root Cause:** The `Grouper` class in `lib/matplotlib/cbook.py` uses `weakref.ref` objects as keys in its `_mapping` dictionary. `weakref.ref` objects cannot be pickled, so when `fig.align_labels()` is called (which populates `_align_label_groups` with `Grouper` instances containing weakrefs to the axes), subsequent `pickle.dumps(fig)` fails with `TypeError: cannot pickle 'weakref.ReferenceType' object`.\n\n**Fix:** Added `__getstate__` and `__setstate__` methods to `Grouper` (`lib/matplotlib/cbook.py`):\n\n- `__getstate__`: Returns `list(self)` \u2014 the existing `__iter__` already yields groups as lists of real object references (not weakrefs), so this gives a clean, picklable representation.\n- `__setstate__`: Rebuilds `_mapping` from scratch using the saved groups by calling `self.join(group[0], *group[1:])` for each group.\n\nThis works correctly because when pickle serializes a figure, it serializes the axes objects and the Grouper state together. When deserializing, pickle restores the axes first (since they're referenced in the Grouper's state), and the `__setstate__` method rebuilds the weakref-based mapping pointing to those restored axes.",
+  "total_cost_usd": 0.9041589999999997,
+  "num_turns": 24
+}

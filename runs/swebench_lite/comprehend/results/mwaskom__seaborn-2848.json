@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 865,
+  "git_diff": "diff --git a/seaborn/_oldcore.py b/seaborn/_oldcore.py\nindex c9218c1f..45c33859 100644\n--- a/seaborn/_oldcore.py\n+++ b/seaborn/_oldcore.py\n@@ -151,17 +151,23 @@ class HueMapping(SemanticMapping):\n         except KeyError:\n             # Use the colormap to interpolate between existing datapoints\n             # (e.g. in the context of making a continuous legend)\n-            try:\n-                normed = self.norm(key)\n-            except TypeError as err:\n-                if np.isnan(key):\n-                    value = (0, 0, 0, 0)\n-                else:\n-                    raise err\n+            if self.norm is None:\n+                # No norm means we have a categorical mapping; a key that is\n+                # not in the lookup table (e.g. excluded by hue_order) should\n+                # be drawn as transparent.\n+                value = (0, 0, 0, 0)\n             else:\n-                if np.ma.is_masked(normed):\n-                    normed = np.nan\n-                value = self.cmap(normed)\n+                try:\n+                    normed = self.norm(key)\n+                except TypeError as err:\n+                    if np.isnan(key):\n+                        value = (0, 0, 0, 0)\n+                    else:\n+                        raise err\n+                else:\n+                    if np.ma.is_masked(normed):\n+                        normed = np.nan\n+                    value = self.cmap(normed)\n         return value\n \n     def infer_map_type(self, palette, norm, input_format, var_type):\ndiff --git a/tests/test_axisgrid.py b/tests/test_axisgrid.py\nindex 40d591f1..65ec0053 100644\n--- a/tests/test_axisgrid.py\n+++ b/tests/test_axisgrid.py\n@@ -1280,6 +1280,19 @@ class TestPairGrid:\n         for ax in g.diag_axes:\n             assert len(ax.collections) == n\n \n+    def test_pairplot_hue_order_with_missing_levels(self):\n+\n+        # Test that pairplot works when hue_order doesn't include all hue values\n+        # (regression test for GH issue - partial hue_order should not raise TypeError)\n+        hue_levels = list(self.df[\"a\"].unique())\n+        hue_order = hue_levels[:-1]  # Exclude the last level\n+\n+        # Should not raise an error\n+        g = ag.pairplot(self.df, hue=\"a\", hue_order=hue_order)\n+        assert len(g.hue_names) == len(hue_order)\n+\n+        plt.close(\"all\")\n+\n     def test_pairplot_reg(self):\n \n         vars = [\"x\", \"y\", \"z\"]\ndiff --git a/tests/test_core.py b/tests/test_core.py\nindex a64d0637..9ba27a6c 100644\n--- a/tests/test_core.py\n+++ b/tests/test_core.py\n@@ -177,6 +177,13 @@ class TestHueMapping:\n         m = HueMapping(p)\n         assert m(np.nan) == (0, 0, 0, 0)\n \n+        # Test value not in hue_order (excluded level) returns transparent\n+        p = VectorPlotter(data=long_df, variables=dict(x=\"x\", y=\"y\", hue=\"a\"))\n+        hue_order = categorical_order(long_df[\"a\"])[:-1]  # Exclude the last level\n+        m = HueMapping(p, order=hue_order)\n+        excluded_level = categorical_order(long_df[\"a\"])[-1]\n+        assert m(excluded_level) == (0, 0, 0, 0)\n+\n         # Test default palette with many levels\n         x = y = np.arange(26)\n         hue = pd.Series(list(\"abcdefghijklmnopqrstuvwxyz\"))\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 863027,
+    "duration_api_ms": 853218,
+    "num_turns": 106,
+    "result": "The fix and tests look good. Let me provide a summary of the changes:\n\n## Summary\n\n**Root Cause:** When `pairplot` is called with `hue_order` that doesn't include all hue values in the data (e.g., only 2 of 3 species), seaborn's internal `_plot_bivariate` passes the **full** hue series to functions like `scatterplot`. Inside `ScatterPlotter.plot`, `self._hue_map(data[\"hue\"])` is called with all hue values, including ones not in `hue_order`.\n\nWhen `HueMapping._lookup_single` tries to find a color for an excluded value (like \"virginica\"):\n1. `lookup_table[\"virginica\"]` \u2192 `KeyError` (not in table since it's excluded by `hue_order`)\n2. `self.norm(\"virginica\")` \u2192 `TypeError: 'NoneType' object is not callable` (norm is None for categorical mappings)\n3. `np.isnan(\"virginica\")` \u2192 `TypeError: ufunc 'isnan' not supported for input types` (strings aren't numeric) \u2190 **the crash**\n\n**Fix in `seaborn/_oldcore.py`:** In `HueMapping._lookup_single`, when a `KeyError` occurs and `self.norm is None` (categorical mapping), return a transparent color `(0, 0, 0, 0)` instead of trying to interpolate via the colormap. This correctly handles values excluded by `hue_order` (they become invisible/transparent, matching the pre-0.11 behavior of not plotting those points).\n\n**Tests added:**\n1. `tests/test_core.py`: Unit test for `HueMapping` verifying that values excluded by `hue_order` return transparent\n2. `tests/test_axisgrid.py`: Integration test for `pairplot` with partial `hue_order`",
+    "stop_reason": null,
+    "session_id": "38b6d659-b98a-4394-b973-3d589ff33919",
+    "total_cost_usd": 6.421540250000002,
+    "usage": {
+      "input_tokens": 99,
+      "cache_creation_input_tokens": 114247,
+      "cache_read_input_tokens": 8690457,
+      "output_tokens": 52554,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 114247,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 99,
+        "outputTokens": 52554,
+        "cacheReadInputTokens": 8690457,
+        "cacheCreationInputTokens": 114247,
+        "webSearchRequests": 0,
+        "costUSD": 6.3736172500000015,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 39038,
+        "outputTokens": 1777,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.047923,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "410b0067-2f0e-4cb6-aceb-aff4a4566339"
+  },
+  "session_id": "38b6d659-b98a-4394-b973-3d589ff33919",
+  "result_text": "The fix and tests look good. Let me provide a summary of the changes:\n\n## Summary\n\n**Root Cause:** When `pairplot` is called with `hue_order` that doesn't include all hue values in the data (e.g., only 2 of 3 species), seaborn's internal `_plot_bivariate` passes the **full** hue series to functions like `scatterplot`. Inside `ScatterPlotter.plot`, `self._hue_map(data[\"hue\"])` is called with all hue values, including ones not in `hue_order`.\n\nWhen `HueMapping._lookup_single` tries to find a color for an excluded value (like \"virginica\"):\n1. `lookup_table[\"virginica\"]` \u2192 `KeyError` (not in table since it's excluded by `hue_order`)\n2. `self.norm(\"virginica\")` \u2192 `TypeError: 'NoneType' object is not callable` (norm is None for categorical mappings)\n3. `np.isnan(\"virginica\")` \u2192 `TypeError: ufunc 'isnan' not supported for input types` (strings aren't numeric) \u2190 **the crash**\n\n**Fix in `seaborn/_oldcore.py`:** In `HueMapping._lookup_single`, when a `KeyError` occurs and `self.norm is None` (categorical mapping), return a transparent color `(0, 0, 0, 0)` instead of trying to interpolate via the colormap. This correctly handles values excluded by `hue_order` (they become invisible/transparent, matching the pre-0.11 behavior of not plotting those points).\n\n**Tests added:**\n1. `tests/test_core.py`: Unit test for `HueMapping` verifying that values excluded by `hue_order` return transparent\n2. `tests/test_axisgrid.py`: Integration test for `pairplot` with partial `hue_order`",
+  "total_cost_usd": 6.421540250000002,
+  "num_turns": 106
+}

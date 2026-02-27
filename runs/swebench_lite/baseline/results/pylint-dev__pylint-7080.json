@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/pylint-dev__pylint",
+  "wall_time_seconds": 349,
+  "git_diff": "diff --git a/pylint/lint/pylinter.py b/pylint/lint/pylinter.py\nindex e2bbf061e..29694b4cd 100644\n--- a/pylint/lint/pylinter.py\n+++ b/pylint/lint/pylinter.py\n@@ -614,6 +614,12 @@ class PyLinter(\n                             os.path.join(root, file)\n                             for file in files\n                             if file.endswith(\".py\")\n+                            and not _is_ignored_file(\n+                                os.path.join(root, file),\n+                                self.config.ignore,\n+                                self.config.ignore_patterns,\n+                                self.config.ignore_paths,\n+                            )\n                         )\n             else:\n                 yield something\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 347934,
+    "duration_api_ms": 415045,
+    "num_turns": 16,
+    "result": "All 6 tests pass. The fix is correct.\n\n## Summary\n\n**Root cause:** In `pylint/lint/pylinter.py`, the `_discover_files` method checks `_is_ignored_file` for directories but not for individual `.py` files within non-package directories (those without `__init__.py`).\n\n**Fix:** Added a `_is_ignored_file` check for each individual file yielded from non-package directories (lines 617-622):\n\n```python\n# Before:\nyield from (\n    os.path.join(root, file)\n    for file in files\n    if file.endswith(\".py\")\n)\n\n# After:\nyield from (\n    os.path.join(root, file)\n    for file in files\n    if file.endswith(\".py\")\n    and not _is_ignored_file(\n        os.path.join(root, file),\n        self.config.ignore,\n        self.config.ignore_patterns,\n        self.config.ignore_paths,\n    )\n)\n```\n\nThis ensures that `--ignore`, `--ignore-patterns`, and `--ignore-paths` are all respected when `--recursive=y` discovers individual `.py` files in non-package directories.",
+    "stop_reason": null,
+    "session_id": "8135bbc3-7590-4fc6-b843-9887bcf7d49b",
+    "total_cost_usd": 1.6419188000000011,
+    "usage": {
+      "input_tokens": 19,
+      "cache_creation_input_tokens": 22760,
+      "cache_read_input_tokens": 557188,
+      "output_tokens": 3282,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 22760,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 70,
+        "outputTokens": 12223,
+        "cacheReadInputTokens": 1411558,
+        "cacheCreationInputTokens": 52870,
+        "webSearchRequests": 0,
+        "costUSD": 1.3421414999999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 109930,
+        "outputTokens": 9068,
+        "cacheReadInputTokens": 1012773,
+        "cacheCreationInputTokens": 34584,
+        "webSearchRequests": 0,
+        "costUSD": 0.29977729999999986,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "801e024a-1631-426a-b45c-ffa272f79900"
+  },
+  "session_id": "8135bbc3-7590-4fc6-b843-9887bcf7d49b",
+  "result_text": "All 6 tests pass. The fix is correct.\n\n## Summary\n\n**Root cause:** In `pylint/lint/pylinter.py`, the `_discover_files` method checks `_is_ignored_file` for directories but not for individual `.py` files within non-package directories (those without `__init__.py`).\n\n**Fix:** Added a `_is_ignored_file` check for each individual file yielded from non-package directories (lines 617-622):\n\n```python\n# Before:\nyield from (\n    os.path.join(root, file)\n    for file in files\n    if file.endswith(\".py\")\n)\n\n# After:\nyield from (\n    os.path.join(root, file)\n    for file in files\n    if file.endswith(\".py\")\n    and not _is_ignored_file(\n        os.path.join(root, file),\n        self.config.ignore,\n        self.config.ignore_patterns,\n        self.config.ignore_paths,\n    )\n)\n```\n\nThis ensures that `--ignore`, `--ignore-patterns`, and `--ignore-paths` are all respected when `--recursive=y` discovers individual `.py` files in non-package directories.",
+  "total_cost_usd": 1.6419188000000011,
+  "num_turns": 16
+}

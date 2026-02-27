@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/pylint-dev__pylint",
+  "wall_time_seconds": 907,
+  "git_diff": "diff --git a/pylint/lint/expand_modules.py b/pylint/lint/expand_modules.py\nindex 289e1afce..3217c86cc 100644\n--- a/pylint/lint/expand_modules.py\n+++ b/pylint/lint/expand_modules.py\n@@ -30,8 +30,7 @@ def get_python_path(filepath: str) -> str:\n     This is not true since python 3.3 and is causing problem.\n     \"\"\"\n     dirname = os.path.realpath(os.path.expanduser(filepath))\n-    if not os.path.isdir(dirname):\n-        dirname = os.path.dirname(dirname)\n+    dirname = os.path.dirname(dirname)\n     while True:\n         if not os.path.exists(os.path.join(dirname, \"__init__.py\")):\n             return dirname\ndiff --git a/tests/lint/unittest_expand_modules.py b/tests/lint/unittest_expand_modules.py\nindex 15f72d0c5..83c4006d5 100644\n--- a/tests/lint/unittest_expand_modules.py\n+++ b/tests/lint/unittest_expand_modules.py\n@@ -4,13 +4,14 @@\n \n from __future__ import annotations\n \n+import os\n import re\n from pathlib import Path\n \n import pytest\n \n from pylint.checkers import BaseChecker\n-from pylint.lint.expand_modules import _is_in_ignore_list_re, expand_modules\n+from pylint.lint.expand_modules import _is_in_ignore_list_re, expand_modules, get_python_path\n from pylint.testutils import CheckerTestCase, set_config\n from pylint.typing import MessageDefinitionTuple\n \n@@ -155,3 +156,43 @@ class TestExpandModules(CheckerTestCase):\n         modules.sort(key=lambda d: d[\"name\"])\n         assert modules == expected\n         assert not errors\n+\n+\n+def test_expand_modules_namespace_package() -> None:\n+    \"\"\"Test that linting a namespace package (no __init__.py) works when a submodule\n+    has the same name as the package directory.\n+\n+    Regression test for https://github.com/PyCQA/pylint/issues/5928\n+    \"\"\"\n+    namespace_pkg_dir = str(\n+        Path(__file__).parent.parent\n+        / \"regrtest_data\"\n+        / \"namespace_package\"\n+        / \"sub_namespace\"\n+    )\n+    modules, errors = expand_modules([namespace_pkg_dir], [], [], [])\n+    assert not errors\n+    assert not any(m[\"path\"].endswith(\"__init__.py\") for m in modules)\n+    module_paths = {m[\"path\"] for m in modules}\n+    assert any(os.path.basename(p) == \"sub_namespace.py\" for p in module_paths)\n+    assert any(os.path.basename(p) == \"other.py\" for p in module_paths)\n+\n+\n+def test_get_python_path() -> None:\n+    \"\"\"Test that get_python_path returns the parent directory for both files\n+    and directories, so that modules can be correctly imported from that path.\n+    \"\"\"\n+    # For a directory, get_python_path should return its parent (or an ancestor\n+    # without __init__.py), not the directory itself.\n+    namespace_pkg_dir = str(\n+        Path(__file__).parent.parent\n+        / \"regrtest_data\"\n+        / \"namespace_package\"\n+        / \"sub_namespace\"\n+    )\n+    python_path = get_python_path(namespace_pkg_dir)\n+    # The returned path should NOT be the sub_namespace directory itself,\n+    # because that would cause sub_namespace/sub_namespace.py to be found\n+    # as module \"sub_namespace\" instead of the namespace package.\n+    assert python_path != namespace_pkg_dir\n+    assert not python_path.endswith(\"sub_namespace\")\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 904501,
+    "duration_api_ms": 891053,
+    "num_turns": 80,
+    "result": "The fix is complete. Here's a summary of what was done:\n\n## Summary\n\n### Root Cause\n\nWhen running `pylint a` where `a/` is a directory containing `a.py` (same name as the directory) but no `__init__.py`, the bug manifested as follows:\n\n1. `get_python_path(\"a\")` returned `a/` itself (since `a/__init__.py` doesn't exist)\n2. `a/` was added to `additional_search_path`\n3. When searching for module `a` in that path, `file_info_from_modpath([\"a\"])` found `a/a.py` (since `a.py` exists inside the `a/` directory), identifying it as `PY_SOURCE` instead of `PY_NAMESPACE`\n4. Since `is_namespace=False`, the non-existent `a/__init__.py` was added to the results list\n5. When pylint tried to parse `a/__init__.py`, it got `[Errno 2] No such file or directory`\n\n### Fix\n\nIn `pylint/lint/expand_modules.py`, simplified `get_python_path` to always use `os.path.dirname()`:\n\n```python\n# Before (buggy):\ndirname = os.path.realpath(os.path.expanduser(filepath))\nif not os.path.isdir(dirname):\n    dirname = os.path.dirname(dirname)\n\n# After (fixed):\ndirname = os.path.realpath(os.path.expanduser(filepath))\ndirname = os.path.dirname(dirname)\n```\n\nFor a **file** like `a/b.py`, behavior is unchanged (dirname of a file path was already the parent directory). For a **directory** like `a/`, we now correctly use the *parent* directory as the python path root, which is the directory from which `a` can be imported as a module.\n\n### Test Fixtures Added\n\n- `tests/regrtest_data/namespace_package/sub_namespace/sub_namespace.py` (empty)\n- `tests/regrtest_data/namespace_package/sub_namespace/other.py` (empty)\n\n### Tests Added\n\nTwo new test functions in `tests/lint/unittest_expand_modules.py`:\n- `test_expand_modules_namespace_package()` - verifies no errors and correct files found\n- `test_get_python_path()` - verifies the fixed behavior of `get_python_path` for directories",
+    "stop_reason": null,
+    "session_id": "6aff4e20-435e-42a0-a6b5-68f136c68e6d",
+    "total_cost_usd": 4.521963449999999,
+    "usage": {
+      "input_tokens": 76,
+      "cache_creation_input_tokens": 80330,
+      "cache_read_input_tokens": 5142957,
+      "output_tokens": 44275,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 80330,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 76,
+        "outputTokens": 44275,
+        "cacheReadInputTokens": 5142957,
+        "cacheCreationInputTokens": 80330,
+        "webSearchRequests": 0,
+        "costUSD": 4.180796000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 95329,
+        "outputTokens": 12818,
+        "cacheReadInputTokens": 1267547,
+        "cacheCreationInputTokens": 43995,
+        "webSearchRequests": 0,
+        "costUSD": 0.34116744999999976,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "15afb744-5e8e-4eb2-ae39-7f0587004c4b"
+  },
+  "session_id": "6aff4e20-435e-42a0-a6b5-68f136c68e6d",
+  "result_text": "The fix is complete. Here's a summary of what was done:\n\n## Summary\n\n### Root Cause\n\nWhen running `pylint a` where `a/` is a directory containing `a.py` (same name as the directory) but no `__init__.py`, the bug manifested as follows:\n\n1. `get_python_path(\"a\")` returned `a/` itself (since `a/__init__.py` doesn't exist)\n2. `a/` was added to `additional_search_path`\n3. When searching for module `a` in that path, `file_info_from_modpath([\"a\"])` found `a/a.py` (since `a.py` exists inside the `a/` directory), identifying it as `PY_SOURCE` instead of `PY_NAMESPACE`\n4. Since `is_namespace=False`, the non-existent `a/__init__.py` was added to the results list\n5. When pylint tried to parse `a/__init__.py`, it got `[Errno 2] No such file or directory`\n\n### Fix\n\nIn `pylint/lint/expand_modules.py`, simplified `get_python_path` to always use `os.path.dirname()`:\n\n```python\n# Before (buggy):\ndirname = os.path.realpath(os.path.expanduser(filepath))\nif not os.path.isdir(dirname):\n    dirname = os.path.dirname(dirname)\n\n# After (fixed):\ndirname = os.path.realpath(os.path.expanduser(filepath))\ndirname = os.path.dirname(dirname)\n```\n\nFor a **file** like `a/b.py`, behavior is unchanged (dirname of a file path was already the parent directory). For a **directory** like `a/`, we now correctly use the *parent* directory as the python path root, which is the directory from which `a` can be imported as a module.\n\n### Test Fixtures Added\n\n- `tests/regrtest_data/namespace_package/sub_namespace/sub_namespace.py` (empty)\n- `tests/regrtest_data/namespace_package/sub_namespace/other.py` (empty)\n\n### Tests Added\n\nTwo new test functions in `tests/lint/unittest_expand_modules.py`:\n- `test_expand_modules_namespace_package()` - verifies no errors and correct files found\n- `test_get_python_path()` - verifies the fixed behavior of `get_python_path` for directories",
+  "total_cost_usd": 4.521963449999999,
+  "num_turns": 80
+}

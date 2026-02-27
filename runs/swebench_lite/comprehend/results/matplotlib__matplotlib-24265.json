@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 146,
+  "git_diff": "diff --git a/lib/matplotlib/style/core.py b/lib/matplotlib/style/core.py\nindex fb0a5426e6..b1f70f8535 100644\n--- a/lib/matplotlib/style/core.py\n+++ b/lib/matplotlib/style/core.py\n@@ -251,10 +251,40 @@ library = None\n available = []\n \n \n+class StyleLibrary(dict):\n+    def __getitem__(self, key):\n+        if key in [\n+            \"seaborn\",\n+            \"seaborn-bright\",\n+            \"seaborn-colorblind\",\n+            \"seaborn-dark\",\n+            \"seaborn-darkgrid\",\n+            \"seaborn-dark-palette\",\n+            \"seaborn-deep\",\n+            \"seaborn-muted\",\n+            \"seaborn-notebook\",\n+            \"seaborn-paper\",\n+            \"seaborn-pastel\",\n+            \"seaborn-poster\",\n+            \"seaborn-talk\",\n+            \"seaborn-ticks\",\n+            \"seaborn-white\",\n+            \"seaborn-whitegrid\",\n+        ]:\n+            _api.warn_deprecated(\n+                \"3.6\", message=\"The seaborn styles shipped by Matplotlib \"\n+                \"are deprecated since %(since)s, as they no longer \"\n+                \"correspond to the styles shipped by seaborn. However, \"\n+                \"they will remain available as 'seaborn-v0_8-<style>'. \"\n+                \"Alternatively, directly use the seaborn API instead.\")\n+            key = key.replace(\"seaborn\", \"seaborn-v0_8\")\n+        return super().__getitem__(key)\n+\n+\n def reload_library():\n     \"\"\"Reload the style library.\"\"\"\n     global library\n-    library = update_user_library(_base_library)\n+    library = StyleLibrary(update_user_library(_base_library))\n     available[:] = sorted(library.keys())\n \n \ndiff --git a/lib/matplotlib/tests/test_style.py b/lib/matplotlib/tests/test_style.py\nindex e1388819ff..4f947951ce 100644\n--- a/lib/matplotlib/tests/test_style.py\n+++ b/lib/matplotlib/tests/test_style.py\n@@ -186,5 +186,13 @@ def test_deprecated_seaborn_styles():\n     assert mpl.rcParams == seaborn_bright\n \n \n+def test_deprecated_seaborn_styles_library_access():\n+    # Directly accessing library with deprecated seaborn names should\n+    # emit a deprecation warning and return the same result as the new name.\n+    with pytest.warns(mpl._api.MatplotlibDeprecationWarning):\n+        rc = mpl.style.library[\"seaborn-colorblind\"]\n+    assert rc == mpl.style.library[\"seaborn-v0_8-colorblind\"]\n+\n+\n def test_up_to_date_blacklist():\n     assert mpl.style.core.STYLE_BLACKLIST <= {*mpl.rcsetup._validators}\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 144363,
+    "duration_api_ms": 146806,
+    "num_turns": 20,
+    "result": "The fix is complete. Here's a summary of the changes:\n\n**Root cause**: In matplotlib 3.6, the seaborn styles were renamed from `seaborn-*` to `seaborn-v0_8-*`. The `use()` function had a `fix_style()` helper to translate old names with a deprecation warning, but `plt.style.library` was a plain `dict` \u2014 so direct access like `library[\"seaborn-colorblind\"]` resulted in a `KeyError`.\n\n**Fix** (`lib/matplotlib/style/core.py`):\n- Added a `StyleLibrary(dict)` subclass that overrides `__getitem__` to detect the 16 deprecated `seaborn-*` names, emit a deprecation warning, and transparently translate the key to its `seaborn-v0_8-*` equivalent before looking up the value.\n- Changed `reload_library()` to wrap the library dict in `StyleLibrary(...)`.\n\n**No double warnings**: When `use(\"seaborn-colorblind\")` is called, `fix_style()` translates the name first, so `library` is always accessed with the new `\"seaborn-v0_8-colorblind\"` key \u2014 which doesn't trigger the `StyleLibrary` translation path.\n\n**Test** (`lib/matplotlib/tests/test_style.py`):\n- Added `test_deprecated_seaborn_styles_library_access` to verify that direct library access with an old name emits a deprecation warning and returns the same value as the new name.",
+    "stop_reason": null,
+    "session_id": "b0efbca8-6aba-4a43-9474-a77ef8a20fc1",
+    "total_cost_usd": 0.68915775,
+    "usage": {
+      "input_tokens": 20,
+      "cache_creation_input_tokens": 24287,
+      "cache_read_input_tokens": 632376,
+      "output_tokens": 8128,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 24287,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 20,
+        "outputTokens": 8128,
+        "cacheReadInputTokens": 632376,
+        "cacheCreationInputTokens": 24287,
+        "webSearchRequests": 0,
+        "costUSD": 0.6712817499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 15891,
+        "outputTokens": 397,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.017876,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "e9d88242-4298-4140-8326-a7497dd91e24"
+  },
+  "session_id": "b0efbca8-6aba-4a43-9474-a77ef8a20fc1",
+  "result_text": "The fix is complete. Here's a summary of the changes:\n\n**Root cause**: In matplotlib 3.6, the seaborn styles were renamed from `seaborn-*` to `seaborn-v0_8-*`. The `use()` function had a `fix_style()` helper to translate old names with a deprecation warning, but `plt.style.library` was a plain `dict` \u2014 so direct access like `library[\"seaborn-colorblind\"]` resulted in a `KeyError`.\n\n**Fix** (`lib/matplotlib/style/core.py`):\n- Added a `StyleLibrary(dict)` subclass that overrides `__getitem__` to detect the 16 deprecated `seaborn-*` names, emit a deprecation warning, and transparently translate the key to its `seaborn-v0_8-*` equivalent before looking up the value.\n- Changed `reload_library()` to wrap the library dict in `StyleLibrary(...)`.\n\n**No double warnings**: When `use(\"seaborn-colorblind\")` is called, `fix_style()` translates the name first, so `library` is always accessed with the new `\"seaborn-v0_8-colorblind\"` key \u2014 which doesn't trigger the `StyleLibrary` translation path.\n\n**Test** (`lib/matplotlib/tests/test_style.py`):\n- Added `test_deprecated_seaborn_styles_library_access` to verify that direct library access with an old name emits a deprecation warning and returns the same value as the new name.",
+  "total_cost_usd": 0.68915775,
+  "num_turns": 20
+}

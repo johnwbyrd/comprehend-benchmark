@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 1109,
+  "git_diff": "diff --git a/lib/matplotlib/colorbar.py b/lib/matplotlib/colorbar.py\nindex 966eb0760b..aed20d7241 100644\n--- a/lib/matplotlib/colorbar.py\n+++ b/lib/matplotlib/colorbar.py\n@@ -1102,8 +1102,11 @@ class Colorbar:\n \n         # transform from 0-1 to vmin-vmax:\n         if not self.norm.scaled():\n-            self.norm.vmin = 0\n-            self.norm.vmax = 1\n+            if self.mappable.get_array() is not None:\n+                self.norm.autoscale_None(self.mappable.get_array())\n+            if not self.norm.scaled():\n+                self.norm.vmin = 0\n+                self.norm.vmax = 1\n         self.norm.vmin, self.norm.vmax = mtransforms.nonsingular(\n             self.norm.vmin, self.norm.vmax, expander=0.1)\n         if (not isinstance(self.norm, colors.BoundaryNorm) and\ndiff --git a/lib/matplotlib/tests/test_colorbar.py b/lib/matplotlib/tests/test_colorbar.py\nindex e39d007378..f615254a34 100644\n--- a/lib/matplotlib/tests/test_colorbar.py\n+++ b/lib/matplotlib/tests/test_colorbar.py\n@@ -658,6 +658,25 @@ def test_colorbar_scale_reset():\n     assert cbar.outline.get_edgecolor() == mcolors.to_rgba('red')\n \n \n+def test_colorbar_lognorm_reset():\n+    # Test that setting a LogNorm on a mappable with an existing colorbar and\n+    # then calling autoscale() does not corrupt the norm. GitHub issue #25816.\n+    rng = np.random.default_rng(0)\n+    img = rng.uniform(1, 5, (25, 25))\n+\n+    fig, ax = plt.subplots()\n+    plot = ax.pcolormesh(img)\n+    fig.colorbar(plot, ax=ax)\n+\n+    plot.norm = LogNorm(1, 5)\n+    plot.autoscale()\n+    # Should not raise \"Invalid vmin or vmax\" on draw\n+    fig.canvas.draw()\n+    # vmin/vmax should be positive (valid for LogNorm, not corrupted to 0 or 1)\n+    assert plot.norm.vmin > 0\n+    assert plot.norm.vmax > 0\n+\n+\n def test_colorbar_get_ticks_2():\n     plt.rcParams['_internal.classic_mode'] = False\n     fig, ax = plt.subplots()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 1106573,
+    "duration_api_ms": 1144136,
+    "num_turns": 62,
+    "result": "The fix is clean and minimal. Let me provide a summary of the bug and fix:\n\n## Summary\n\n**Bug**: Setting `plot.norm = LogNorm(vmin, vmax)` after a colorbar has been created, then calling `plot.autoscale()`, raises `ValueError: Invalid vmin or vmax`.\n\n**Root cause**: `Normalize.autoscale(A)` first resets vmin/vmax to `None` before calling `autoscale_None(A)`. Setting `vmin = None` triggers `_changed()` on the norm \u2192 ScalarMappable's `changed()` \u2192 colorbar's `update_normal` \u2192 `_draw_all` \u2192 `_process_values`. In `_process_values`, when the norm is not yet scaled (`scaled() = False`), the colorbar **permanently corrupts the norm** by setting `self.norm.vmin = 0, self.norm.vmax = 1`. For `LogNorm`, `vmin=0` is invalid (`log10(0) = -inf`). When the original `autoscale_None(A)` then runs, it finds `vmin` is `0` (not `None`) and doesn't update it, leaving the norm permanently corrupted.\n\n**Fix** (in `lib/matplotlib/colorbar.py`, `_process_values`): When the norm is not scaled, instead of immediately setting `vmin=0, vmax=1` (which is invalid for `LogNorm`), first try to autoscale the norm using the mappable's actual data via `autoscale_None`. This ensures norm-type-appropriate values are used (e.g., positive values for `LogNorm`). Only fall back to `(0, 1)` if there is no array data available.",
+    "stop_reason": null,
+    "session_id": "e3dea76f-2f34-4bdc-bfa3-3c5fa4af9bba",
+    "total_cost_usd": 4.223333950000002,
+    "usage": {
+      "input_tokens": 54,
+      "cache_creation_input_tokens": 84674,
+      "cache_read_input_tokens": 3892933,
+      "output_tokens": 54467,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 84674,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 54,
+        "outputTokens": 54467,
+        "cacheReadInputTokens": 3892933,
+        "cacheCreationInputTokens": 84674,
+        "webSearchRequests": 0,
+        "costUSD": 3.8376240000000004,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 64620,
+        "outputTokens": 14272,
+        "cacheReadInputTokens": 1960662,
+        "cacheCreationInputTokens": 42931,
+        "webSearchRequests": 0,
+        "costUSD": 0.3857099499999998,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "064e0e9e-7c6e-4187-95cb-678065d6597e"
+  },
+  "session_id": "e3dea76f-2f34-4bdc-bfa3-3c5fa4af9bba",
+  "result_text": "The fix is clean and minimal. Let me provide a summary of the bug and fix:\n\n## Summary\n\n**Bug**: Setting `plot.norm = LogNorm(vmin, vmax)` after a colorbar has been created, then calling `plot.autoscale()`, raises `ValueError: Invalid vmin or vmax`.\n\n**Root cause**: `Normalize.autoscale(A)` first resets vmin/vmax to `None` before calling `autoscale_None(A)`. Setting `vmin = None` triggers `_changed()` on the norm \u2192 ScalarMappable's `changed()` \u2192 colorbar's `update_normal` \u2192 `_draw_all` \u2192 `_process_values`. In `_process_values`, when the norm is not yet scaled (`scaled() = False`), the colorbar **permanently corrupts the norm** by setting `self.norm.vmin = 0, self.norm.vmax = 1`. For `LogNorm`, `vmin=0` is invalid (`log10(0) = -inf`). When the original `autoscale_None(A)` then runs, it finds `vmin` is `0` (not `None`) and doesn't update it, leaving the norm permanently corrupted.\n\n**Fix** (in `lib/matplotlib/colorbar.py`, `_process_values`): When the norm is not scaled, instead of immediately setting `vmin=0, vmax=1` (which is invalid for `LogNorm`), first try to autoscale the norm using the mappable's actual data via `autoscale_None`. This ensures norm-type-appropriate values are used (e.g., positive values for `LogNorm`). Only fall back to `(0, 1)` if there is no array data available.",
+  "total_cost_usd": 4.223333950000002,
+  "num_turns": 62
+}

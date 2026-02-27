@@ -49,7 +49,7 @@ python benchmarks/swebench_lite/run_tasks.py --config configs/baseline.json --al
 Expected: ~4-5 hours wall time per model.
 
 Outputs:
-- Per-task result JSON in `results/swebench_lite/baseline/`
+- Per-task result JSON in `runs/swebench_lite/baseline/results/`
 - Identify the **failure set**: tasks where baseline did not produce a passing patch
 
 Expected failure set size varies by model. For Sonnet: ~100-120 tasks based

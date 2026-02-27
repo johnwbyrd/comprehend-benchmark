@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 17,
+  "git_diff": "diff --git a/sphinx/ext/napoleon/docstring.py b/sphinx/ext/napoleon/docstring.py\nindex 755088ca5..a5a986e49 100644\n--- a/sphinx/ext/napoleon/docstring.py\n+++ b/sphinx/ext/napoleon/docstring.py\n@@ -682,7 +682,13 @@ class GoogleDocstring:\n         return self._parse_generic_section(_('Notes'), use_admonition)\n \n     def _parse_other_parameters_section(self, section: str) -> List[str]:\n-        return self._format_fields(_('Other Parameters'), self._consume_fields())\n+        if self._config.napoleon_use_param:\n+            # Allow to declare multiple parameters at once (ex: x, y: int)\n+            fields = self._consume_fields(multiple=True)\n+            return self._format_docutils_params(fields)\n+        else:\n+            fields = self._consume_fields()\n+            return self._format_fields(_('Other Parameters'), fields)\n \n     def _parse_parameters_section(self, section: str) -> List[str]:\n         if self._config.napoleon_use_param:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 14548,
+    "duration_api_ms": 14216,
+    "num_turns": 5,
+    "result": "The fix mirrors the logic in `_parse_parameters_section`: when `napoleon_use_param` is `True`, it consumes fields with `multiple=True` and formats them as docutils `:param:` / `:type:` fields; otherwise it falls back to the original `_format_fields` behavior. This makes the \"Other Parameters\" section follow the same formatting rules as \"Parameters\".",
+    "stop_reason": null,
+    "session_id": "27a5d463-a150-4db0-8859-8fd5bc83ee9d",
+    "total_cost_usd": 0.11854925,
+    "usage": {
+      "input_tokens": 7,
+      "cache_creation_input_tokens": 6617,
+      "cache_read_input_tokens": 117066,
+      "output_tokens": 745,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 6617,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 7,
+        "outputTokens": 745,
+        "cacheReadInputTokens": 117066,
+        "cacheCreationInputTokens": 6617,
+        "webSearchRequests": 0,
+        "costUSD": 0.11854925,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "ba6e0084-86fd-49b4-a064-f983f01f657e"
+  },
+  "session_id": "27a5d463-a150-4db0-8859-8fd5bc83ee9d",
+  "result_text": "The fix mirrors the logic in `_parse_parameters_section`: when `napoleon_use_param` is `True`, it consumes fields with `multiple=True` and formats them as docutils `:param:` / `:type:` fields; otherwise it falls back to the original `_format_fields` behavior. This makes the \"Other Parameters\" section follow the same formatting rules as \"Parameters\".",
+  "total_cost_usd": 0.11854925,
+  "num_turns": 5
+}

@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 19,
+  "git_diff": "diff --git a/astropy/io/fits/fitsrec.py b/astropy/io/fits/fitsrec.py\nindex 574b4073b1..36e4a5899a 100644\n--- a/astropy/io/fits/fitsrec.py\n+++ b/astropy/io/fits/fitsrec.py\n@@ -1261,7 +1261,8 @@ class FITS_rec(np.recarray):\n \n         # Replace exponent separator in floating point numbers\n         if 'D' in format:\n-            output_field.replace(encode_ascii('E'), encode_ascii('D'))\n+            output_field[:] = np.char.replace(output_field, encode_ascii('E'),\n+                                               encode_ascii('D'))\n \n \n def _get_recarray_field(array, key):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 17231,
+    "duration_api_ms": 16876,
+    "num_turns": 4,
+    "result": "The bug was that `output_field.replace(...)` discards the result \u2014 `replace` on a chararray is not in-place. The fix uses `np.char.replace` (which is how the analogous read-side code at line 837 does it) and assigns the result back with `output_field[:] = ...`.",
+    "stop_reason": null,
+    "session_id": "1f4a294e-bfbc-444b-b4e9-f71ea09a44e5",
+    "total_cost_usd": 0.12375375,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 8523,
+      "cache_read_input_tokens": 97060,
+      "output_tokens": 877,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 8523,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 6,
+        "outputTokens": 877,
+        "cacheReadInputTokens": 97060,
+        "cacheCreationInputTokens": 8523,
+        "webSearchRequests": 0,
+        "costUSD": 0.12375375,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "dc3b5964-dc3b-489e-942e-c6d866215cc8"
+  },
+  "session_id": "1f4a294e-bfbc-444b-b4e9-f71ea09a44e5",
+  "result_text": "The bug was that `output_field.replace(...)` discards the result \u2014 `replace` on a chararray is not in-place. The fix uses `np.char.replace` (which is how the analogous read-side code at line 837 does it) and assigns the result back with `output_field[:] = ...`.",
+  "total_cost_usd": 0.12375375,
+  "num_turns": 4
+}

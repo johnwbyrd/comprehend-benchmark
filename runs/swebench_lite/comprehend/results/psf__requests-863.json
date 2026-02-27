@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 32,
+  "git_diff": "diff --git a/requests/models.py b/requests/models.py\nindex d8456375..404b4bf5 100644\n--- a/requests/models.py\n+++ b/requests/models.py\n@@ -463,7 +463,10 @@ class Request(object):\n     def register_hook(self, event, hook):\n         \"\"\"Properly register a hook.\"\"\"\n \n-        self.hooks[event].append(hook)\n+        if isinstance(hook, list):\n+            self.hooks[event].extend(hook)\n+        else:\n+            self.hooks[event].append(hook)\n \n     def deregister_hook(self, event, hook):\n         \"\"\"Deregister a previously registered hook.\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 29957,
+    "duration_api_ms": 29408,
+    "num_turns": 8,
+    "result": "The existing test already covers the scenario. The fix is correct \u2014 `register_hook` now checks if `hook` is a list and uses `extend` to add all items individually, rather than `append` which would wrap the list as a single non-callable element.\n\n**Summary of the change:**\n\nIn `requests/models.py`, `register_hook` previously always called `self.hooks[event].append(hook)`. If a list was passed (e.g., `hooks={'args': [fn1, fn2]}`), it would append the list itself as one item \u2014 which then fails during dispatch since a list isn't callable.\n\nThe fix checks if `hook` is a list and uses `extend` instead of `append`, so each function in the list is registered individually. This matches what `dispatch_hook` in `hooks.py` already expects: a list of callables.",
+    "stop_reason": null,
+    "session_id": "8f2b67cd-0683-4ec7-885e-85477ce8c3d4",
+    "total_cost_usd": 0.184507,
+    "usage": {
+      "input_tokens": 9,
+      "cache_creation_input_tokens": 8708,
+      "cache_read_input_tokens": 174674,
+      "output_tokens": 1708,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 8708,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 9,
+        "outputTokens": 1708,
+        "cacheReadInputTokens": 174674,
+        "cacheCreationInputTokens": 8708,
+        "webSearchRequests": 0,
+        "costUSD": 0.184507,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "d112b7ac-5040-4d44-a98d-5292701e80ca"
+  },
+  "session_id": "8f2b67cd-0683-4ec7-885e-85477ce8c3d4",
+  "result_text": "The existing test already covers the scenario. The fix is correct \u2014 `register_hook` now checks if `hook` is a list and uses `extend` to add all items individually, rather than `append` which would wrap the list as a single non-callable element.\n\n**Summary of the change:**\n\nIn `requests/models.py`, `register_hook` previously always called `self.hooks[event].append(hook)`. If a list was passed (e.g., `hooks={'args': [fn1, fn2]}`), it would append the list itself as one item \u2014 which then fails during dispatch since a list isn't callable.\n\nThe fix checks if `hook` is a list and uses `extend` instead of `append`, so each function in the list is registered individually. This matches what `dispatch_hook` in `hooks.py` already expects: a list of callables.",
+  "total_cost_usd": 0.184507,
+  "num_turns": 8
+}

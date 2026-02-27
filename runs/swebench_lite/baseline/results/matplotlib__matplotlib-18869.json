@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 50,
+  "git_diff": "diff --git a/lib/matplotlib/__init__.py b/lib/matplotlib/__init__.py\nindex b657a35cf7..926b61a6aa 100644\n--- a/lib/matplotlib/__init__.py\n+++ b/lib/matplotlib/__init__.py\n@@ -129,6 +129,8 @@ __bibtex__ = r\"\"\"@Article{Hunter:2007,\n   year      = 2007\n }\"\"\"\n \n+_VersionInfo = namedtuple('_VersionInfo', 'major, minor, micro')\n+\n \n def __getattr__(name):\n     if name == \"__version__\":\n@@ -148,6 +150,12 @@ def __getattr__(name):\n         else:  # Get the version from the _version.py setuptools_scm file.\n             __version__ = _version.version\n         return __version__\n+    if name == \"__version_info__\":\n+        # Convert the version string to a namedtuple for easy comparison.\n+        from packaging.version import Version\n+        global __version_info__  # cache it.\n+        __version_info__ = _VersionInfo(*Version(__version__).release)\n+        return __version_info__\n     raise AttributeError(f\"module {__name__!r} has no attribute {name!r}\")\n \n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 47805,
+    "duration_api_ms": 51446,
+    "num_turns": 14,
+    "result": "The implementation looks good. Here's what was added:\n\n1. **`_VersionInfo` namedtuple** (line 132): A named tuple with fields `major`, `minor`, `micro` \u2014 mirroring the style of `sys.version_info`.\n\n2. **`__version_info__` in `__getattr__`** (lines 153\u2013158): Lazily computed (same pattern as `__version__`) using `packaging.version.Version` (already a dependency) to parse `__version__` and extract the `.release` tuple (which contains only the numeric parts like `(3, 4, 2)`, ignoring any `.post` or local suffixes).\n\n**Usage:**\n```python\nimport matplotlib as mpl\n\n# Tuple comparison works correctly even for 3.10+\nmpl.__version_info__ >= (3, 4)   # True for 3.4.x+\nmpl.__version_info__.major       # 3\nmpl.__version_info__.minor       # 4\nmpl.__version_info__.micro       # 2\n```\n\nThe `packaging.version.Version.release` attribute returns only the numeric release tuple (stripping `.post`, `+local`, etc.), which is exactly what's needed for reliable version comparisons.",
+    "stop_reason": null,
+    "session_id": "c256f99f-fb5f-4fc8-a1c4-b23f2bd764d0",
+    "total_cost_usd": 0.32573375000000004,
+    "usage": {
+      "input_tokens": 15,
+      "cache_creation_input_tokens": 11923,
+      "cache_read_input_tokens": 343598,
+      "output_tokens": 2847,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 11923,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 15,
+        "outputTokens": 2847,
+        "cacheReadInputTokens": 343598,
+        "cacheCreationInputTokens": 11923,
+        "webSearchRequests": 0,
+        "costUSD": 0.31756775000000004,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 7486,
+        "outputTokens": 136,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.008166,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "2ac3b63b-e604-4a09-b59d-1c1165f3f51a"
+  },
+  "session_id": "c256f99f-fb5f-4fc8-a1c4-b23f2bd764d0",
+  "result_text": "The implementation looks good. Here's what was added:\n\n1. **`_VersionInfo` namedtuple** (line 132): A named tuple with fields `major`, `minor`, `micro` \u2014 mirroring the style of `sys.version_info`.\n\n2. **`__version_info__` in `__getattr__`** (lines 153\u2013158): Lazily computed (same pattern as `__version__`) using `packaging.version.Version` (already a dependency) to parse `__version__` and extract the `.release` tuple (which contains only the numeric parts like `(3, 4, 2)`, ignoring any `.post` or local suffixes).\n\n**Usage:**\n```python\nimport matplotlib as mpl\n\n# Tuple comparison works correctly even for 3.10+\nmpl.__version_info__ >= (3, 4)   # True for 3.4.x+\nmpl.__version_info__.major       # 3\nmpl.__version_info__.minor       # 4\nmpl.__version_info__.micro       # 2\n```\n\nThe `packaging.version.Version.release` attribute returns only the numeric release tuple (stripping `.post`, `+local`, etc.), which is exactly what's needed for reliable version comparisons.",
+  "total_cost_usd": 0.32573375000000004,
+  "num_turns": 14
+}

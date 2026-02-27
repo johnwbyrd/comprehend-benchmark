@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 102,
+  "git_diff": "diff --git a/lib/matplotlib/__init__.py b/lib/matplotlib/__init__.py\nindex b657a35cf7..479eed30d1 100644\n--- a/lib/matplotlib/__init__.py\n+++ b/lib/matplotlib/__init__.py\n@@ -114,6 +114,8 @@ from matplotlib.rcsetup import validate_backend, cycler\n \n _log = logging.getLogger(__name__)\n \n+_VersionInfo = namedtuple('_VersionInfo', 'major, minor, micro')\n+\n __bibtex__ = r\"\"\"@Article{Hunter:2007,\n   Author    = {Hunter, J. D.},\n   Title     = {Matplotlib: A 2D graphics environment},\n@@ -131,7 +133,7 @@ __bibtex__ = r\"\"\"@Article{Hunter:2007,\n \n \n def __getattr__(name):\n-    if name == \"__version__\":\n+    if name in (\"__version__\", \"__version_info__\"):\n         import setuptools_scm\n         global __version__  # cache it.\n         # Only shell out to a git subprocess if really needed, and not on a\n@@ -147,7 +149,11 @@ def __getattr__(name):\n             )\n         else:  # Get the version from the _version.py setuptools_scm file.\n             __version__ = _version.version\n-        return __version__\n+        global __version_info__\n+        __version_info__ = _VersionInfo(*parse_version(__version__).release[:3])\n+        if name == \"__version__\":\n+            return __version__\n+        return __version_info__\n     raise AttributeError(f\"module {__name__!r} has no attribute {name!r}\")\n \n \ndiff --git a/lib/matplotlib/tests/test_matplotlib.py b/lib/matplotlib/tests/test_matplotlib.py\nindex cad9433a56..1df8115c2b 100644\n--- a/lib/matplotlib/tests/test_matplotlib.py\n+++ b/lib/matplotlib/tests/test_matplotlib.py\n@@ -52,6 +52,17 @@ def test_use_doc_standard_backends():\n             set(matplotlib.rcsetup.non_interactive_bk))\n \n \n+def test_version_info():\n+    assert matplotlib.__version_info__ >= (3, 0, 0)\n+    assert isinstance(matplotlib.__version_info__.major, int)\n+    assert isinstance(matplotlib.__version_info__.minor, int)\n+    assert isinstance(matplotlib.__version_info__.micro, int)\n+    assert (f\"{matplotlib.__version_info__.major}\"\n+            f\".{matplotlib.__version_info__.minor}\"\n+            f\".{matplotlib.__version_info__.micro}\"\n+            in matplotlib.__version__)\n+\n+\n def test_importable_with__OO():\n     \"\"\"\n     When using -OO or export PYTHONOPTIMIZE=2, docstrings are discarded,\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 99819,
+    "duration_api_ms": 103368,
+    "num_turns": 25,
+    "result": "The implementation is clean and complete. Here's a summary of the changes:\n\n**`lib/matplotlib/__init__.py`:**\n1. Added `_VersionInfo = namedtuple('_VersionInfo', 'major, minor, micro')` \u2014 a named tuple type for the version info (line 117).\n2. Extended `__getattr__` to handle `__version_info__` alongside `__version__`. When either is accessed, the version string is resolved (from `setuptools_scm` or `_version.py`), and then `parse_version(__version__).release[:3]` extracts the numeric `(major, minor, micro)` tuple, stored as a `_VersionInfo` namedtuple.\n\n**`lib/matplotlib/tests/test_matplotlib.py`:**\n- Added `test_version_info()` to verify the new attribute works correctly \u2014 it's a tuple `>= (3, 0, 0)`, has integer `.major`/`.minor`/`.micro` fields, and its string form appears in `__version__`.\n\n**Usage example:**\n```python\nimport matplotlib\nmatplotlib.__version_info__         # _VersionInfo(major=3, minor=5, micro=0)\nmatplotlib.__version_info__ >= (3, 4, 0)  # True\nmatplotlib.__version_info__.major   # 3\n```\n\nThe `_VersionInfo` namedtuple allows both positional tuple comparisons (like `sys.version_info`) and named field access, making version checks clean and unambiguous even when matplotlib reaches versions like 3.10.x.",
+    "stop_reason": null,
+    "session_id": "4e9ee4c9-2165-419d-9b9b-4640cb6323f7",
+    "total_cost_usd": 0.5723417500000001,
+    "usage": {
+      "input_tokens": 21,
+      "cache_creation_input_tokens": 19351,
+      "cache_read_input_tokens": 592962,
+      "output_tokens": 5911,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 19351,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 21,
+        "outputTokens": 5911,
+        "cacheReadInputTokens": 592962,
+        "cacheCreationInputTokens": 19351,
+        "webSearchRequests": 0,
+        "costUSD": 0.5653047499999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 5867,
+        "outputTokens": 234,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.007037,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "c6c68247-84d6-4b10-af2f-f511b8e9c407"
+  },
+  "session_id": "4e9ee4c9-2165-419d-9b9b-4640cb6323f7",
+  "result_text": "The implementation is clean and complete. Here's a summary of the changes:\n\n**`lib/matplotlib/__init__.py`:**\n1. Added `_VersionInfo = namedtuple('_VersionInfo', 'major, minor, micro')` \u2014 a named tuple type for the version info (line 117).\n2. Extended `__getattr__` to handle `__version_info__` alongside `__version__`. When either is accessed, the version string is resolved (from `setuptools_scm` or `_version.py`), and then `parse_version(__version__).release[:3]` extracts the numeric `(major, minor, micro)` tuple, stored as a `_VersionInfo` namedtuple.\n\n**`lib/matplotlib/tests/test_matplotlib.py`:**\n- Added `test_version_info()` to verify the new attribute works correctly \u2014 it's a tuple `>= (3, 0, 0)`, has integer `.major`/`.minor`/`.micro` fields, and its string form appears in `__version__`.\n\n**Usage example:**\n```python\nimport matplotlib\nmatplotlib.__version_info__         # _VersionInfo(major=3, minor=5, micro=0)\nmatplotlib.__version_info__ >= (3, 4, 0)  # True\nmatplotlib.__version_info__.major   # 3\n```\n\nThe `_VersionInfo` namedtuple allows both positional tuple comparisons (like `sys.version_info`) and named field access, making version checks clean and unambiguous even when matplotlib reaches versions like 3.10.x.",
+  "total_cost_usd": 0.5723417500000001,
+  "num_turns": 25
+}

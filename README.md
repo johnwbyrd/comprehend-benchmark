@@ -53,8 +53,8 @@ python benchmarks/swebench_lite/run_tasks.py --config configs/comprehend.json
 
 # Compare results
 python analysis/compare.py \
-  results/swebench_lite/baseline/ \
-  results/swebench_lite/comprehend/
+  runs/swebench_lite/baseline/results/ \
+  runs/swebench_lite/comprehend/results/
 ```
 
 ## Full evaluation
@@ -71,10 +71,10 @@ python benchmarks/swebench_lite/run_tasks.py \
 
 # Evaluate patches using the official SWE-bench harness
 python benchmarks/swebench_lite/evaluate.py \
-  results/swebench_lite/baseline/predictions.jsonl
+  runs/swebench_lite/baseline/predictions.jsonl
 
 python benchmarks/swebench_lite/evaluate.py \
-  results/swebench_lite/comprehend/predictions.jsonl
+  runs/swebench_lite/comprehend/predictions.jsonl
 ```
 
 ### SWE-QA
@@ -185,28 +185,41 @@ comparisons are:
 
 ```
 comprehend-benchmark/
-├── README.md                   # This file
-├── pyproject.toml              # Project config
+├── README.md                        # This file
+├── FINDINGS.md                      # Detailed results and analysis
+├── TEST_STRATEGY.md                 # Experimental design and decision criteria
+├── pyproject.toml                   # Project config
 ├── configs/
-│   ├── baseline.json           # Claude Code settings without comprehend
-│   └── comprehend.json         # Claude Code settings with comprehend
+│   ├── baseline.json                # Claude Code settings without comprehend
+│   └── comprehend.json              # Claude Code settings with comprehend
 ├── benchmarks/
 │   ├── swebench_lite/
-│   │   ├── README.md           # SWE-bench specific instructions
-│   │   ├── run_tasks.py        # Run SWE-bench tasks
-│   │   ├── evaluate.py         # Evaluate predictions
-│   │   └── sample_tasks.json   # Curated multi-file subset
+│   │   ├── run_tasks.py             # Run SWE-bench tasks
+│   │   ├── evaluate.py              # Evaluate predictions
+│   │   └── sample_tasks.json        # Curated multi-file subset
 │   ├── swe_qa/
-│   │   ├── README.md           # SWE-QA specific instructions
-│   │   └── run_tasks.py        # Run SWE-QA tasks
+│   │   └── run_tasks.py             # Run SWE-QA tasks
 │   └── repo_qa/
-│       ├── README.md           # RepoQA specific instructions
-│       └── run_tasks.py        # Run RepoQA tasks
+│       └── run_tasks.py             # Run RepoQA tasks
+├── runs/
+│   └── swebench_lite/
+│       ├── baseline/
+│       │   ├── results/             # Per-task result JSONs (metrics, diff)
+│       │   ├── transcripts/         # Full Claude Code conversations
+│       │   ├── predictions.jsonl    # Aggregated patches for evaluation
+│       │   └── summary.json
+│       ├── comprehend/
+│       │   ├── results/             # Per-task result JSONs
+│       │   ├── transcripts/         # Full conversations + subagent data
+│       │   ├── predictions.jsonl
+│       │   └── summary.json
+│       └── evaluations/             # SWE-bench harness output
 ├── analysis/
-│   ├── compare.py              # Compare results between configs
-│   └── report.py               # Generate summary report
+│   ├── compare.py                   # Compare results between configs
+│   └── report.py                    # Generate summary report
 └── scripts/
-    └── run_one.sh              # Run a single task
+    ├── run_one.sh                   # Run a single task
+    └── harvest_transcripts.py       # Copy transcripts from ~/.claude/
 ```
 
 ## License

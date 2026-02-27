@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 349,
+  "git_diff": "diff --git a/sphinx/ext/autodoc/__init__.py b/sphinx/ext/autodoc/__init__.py\nindex 978fd5df8..ccf7c3a8d 100644\n--- a/sphinx/ext/autodoc/__init__.py\n+++ b/sphinx/ext/autodoc/__init__.py\n@@ -1261,6 +1261,9 @@ class FunctionDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):  # typ\n                     documenter.objpath = [None]\n                     sigs.append(documenter.format_signature())\n         if overloaded:\n+            if self.env.config.autodoc_typehints in ('none', 'description'):\n+                kwargs.setdefault('show_annotation', False)\n+\n             __globals__ = safe_getattr(self.object, '__globals__', {})\n             for overload in self.analyzer.overloads.get('.'.join(self.objpath)):\n                 overload = evaluate_signature(overload, __globals__,\n@@ -1478,6 +1481,9 @@ class ClassDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):  # type:\n             # Use signatures for overloaded methods instead of the implementation method.\n             method = safe_getattr(self._signature_class, self._signature_method_name, None)\n             __globals__ = safe_getattr(method, '__globals__', {})\n+            if self.env.config.autodoc_typehints in ('none', 'description'):\n+                kwargs.setdefault('show_annotation', False)\n+\n             for overload in overloads:\n                 overload = evaluate_signature(overload, __globals__,\n                                               self.env.config.autodoc_type_aliases)\n@@ -1905,6 +1911,9 @@ class MethodDocumenter(DocstringSignatureMixin, ClassLevelDocumenter):  # type:\n                     documenter.objpath = [None]\n                     sigs.append(documenter.format_signature())\n         if overloaded:\n+            if self.env.config.autodoc_typehints in ('none', 'description'):\n+                kwargs.setdefault('show_annotation', False)\n+\n             __globals__ = safe_getattr(self.object, '__globals__', {})\n             for overload in self.analyzer.overloads.get('.'.join(self.objpath)):\n                 overload = evaluate_signature(overload, __globals__,\ndiff --git a/tests/test_ext_autodoc_configs.py b/tests/test_ext_autodoc_configs.py\nindex 7d51b7f0e..3e4150183 100644\n--- a/tests/test_ext_autodoc_configs.py\n+++ b/tests/test_ext_autodoc_configs.py\n@@ -610,6 +610,61 @@ def test_autodoc_typehints_none(app):\n     ]\n \n \n+@pytest.mark.sphinx('html', testroot='ext-autodoc',\n+                    confoverrides={'autodoc_typehints': \"none\"})\n+def test_autodoc_typehints_none_for_overloaded_function(app):\n+    options = {\"members\": None}\n+    actual = do_autodoc(app, 'module', 'target.overload', options)\n+    assert list(actual) == [\n+        '',\n+        '.. py:module:: target.overload',\n+        '',\n+        '',\n+        '.. py:class:: Bar(x, y)',\n+        '              Bar(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Baz(x, y)',\n+        '              Baz(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Foo(x, y)',\n+        '              Foo(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '.. py:class:: Math()',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+        '',\n+        '   .. py:method:: Math.sum(x, y)',\n+        '                  Math.sum(x, y)',\n+        '                  Math.sum(x, y)',\n+        '      :module: target.overload',\n+        '',\n+        '      docstring',\n+        '',\n+        '',\n+        '.. py:function:: sum(x, y)',\n+        '                 sum(x, y)',\n+        '                 sum(x, y)',\n+        '   :module: target.overload',\n+        '',\n+        '   docstring',\n+        '',\n+    ]\n+\n+\n @pytest.mark.sphinx('text', testroot='ext-autodoc',\n                     confoverrides={'autodoc_typehints': \"description\"})\n def test_autodoc_typehints_description(app):\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 2532,
+    "duration_api_ms": 351988,
+    "num_turns": 1,
+    "result": "Already shown in the main conversation \u2014 the `git diff` output confirmed all three fixes to `sphinx/ext/autodoc/__init__.py` and the new test in `tests/test_ext_autodoc_configs.py`. No new information.",
+    "stop_reason": null,
+    "session_id": "0630c6e0-be5a-4e60-978b-1de6068c3be7",
+    "total_cost_usd": 1.55015835,
+    "usage": {
+      "input_tokens": 3,
+      "cache_creation_input_tokens": 237,
+      "cache_read_input_tokens": 57170,
+      "output_tokens": 56,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 237,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 53,
+        "outputTokens": 16093,
+        "cacheReadInputTokens": 1608123,
+        "cacheCreationInputTokens": 38458,
+        "webSearchRequests": 0,
+        "costUSD": 1.447014,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 15402,
+        "outputTokens": 4900,
+        "cacheReadInputTokens": 353886,
+        "cacheCreationInputTokens": 22283,
+        "webSearchRequests": 0,
+        "costUSD": 0.10314435000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "3762597e-5b85-40cd-9509-9d0ab77bf406"
+  },
+  "session_id": "0630c6e0-be5a-4e60-978b-1de6068c3be7",
+  "result_text": "Already shown in the main conversation \u2014 the `git diff` output confirmed all three fixes to `sphinx/ext/autodoc/__init__.py` and the new test in `tests/test_ext_autodoc_configs.py`. No new information.",
+  "total_cost_usd": 1.55015835,
+  "num_turns": 1
+}

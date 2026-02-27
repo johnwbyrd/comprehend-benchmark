@@ -1,8 +1,8 @@
 """Evaluate SWE-bench predictions using the official harness.
 
 Usage:
-    uv run bench-swebench-eval results/swebench_lite/baseline/predictions.jsonl
-    uv run bench-swebench-eval results/swebench_lite/comprehend/predictions.jsonl
+    uv run bench-swebench-eval runs/swebench_lite/baseline/predictions.jsonl
+    uv run bench-swebench-eval runs/swebench_lite/comprehend/predictions.jsonl
 
 Requires:
     uv sync --extra swebench

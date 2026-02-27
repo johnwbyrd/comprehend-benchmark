@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 526,
+  "git_diff": "diff --git a/astropy/io/ascii/rst.py b/astropy/io/ascii/rst.py\nindex abdeba8efb..35de6ec80f 100644\n--- a/astropy/io/ascii/rst.py\n+++ b/astropy/io/ascii/rst.py\n@@ -57,10 +57,12 @@ class RST(FixedWidth):\n     data_class = SimpleRSTData\n     header_class = SimpleRSTHeader\n \n-    def __init__(self):\n-        super().__init__(delimiter_pad=None, bookend=False)\n+    def __init__(self, header_rows=None):\n+        super().__init__(delimiter_pad=None, bookend=False, header_rows=header_rows)\n+        self.data.start_line = 2 + len(self.data.header_rows)\n \n     def write(self, lines):\n         lines = super().write(lines)\n-        lines = [lines[1]] + lines + [lines[1]]\n+        idx = len(self.data.header_rows)\n+        lines = [lines[idx]] + lines + [lines[idx]]\n         return lines\ndiff --git a/astropy/io/ascii/tests/test_rst.py b/astropy/io/ascii/tests/test_rst.py\nindex 84d6fed401..d020576791 100644\n--- a/astropy/io/ascii/tests/test_rst.py\n+++ b/astropy/io/ascii/tests/test_rst.py\n@@ -2,7 +2,9 @@\n \n from io import StringIO\n \n+import astropy.units as u\n from astropy.io import ascii\n+from astropy.table import QTable\n \n from .common import assert_almost_equal, assert_equal\n \n@@ -185,3 +187,39 @@ Col1      Col2 Col3 Col4\n ==== ========= ==== ====\n \"\"\",\n     )\n+\n+\n+def test_write_header_rows():\n+    \"\"\"Write a QTable as RST with header_rows including units\"\"\"\n+    tbl = QTable({\"wave\": [350, 950] * u.nm, \"response\": [0.7, 1.2] * u.count})\n+    out = StringIO()\n+    tbl.write(out, format=\"ascii.rst\", header_rows=[\"name\", \"unit\"])\n+    assert_equal_splitlines(\n+        out.getvalue(),\n+        \"\"\"\\\n+===== ========\n+ wave response\n+   nm       ct\n+===== ========\n+350.0      0.7\n+950.0      1.2\n+===== ========\n+\"\"\",\n+    )\n+\n+\n+def test_read_header_rows():\n+    \"\"\"Read an RST table with header_rows including units\"\"\"\n+    table = \"\"\"\\\n+===== ========\n+ wave response\n+   nm       ct\n+===== ========\n+350.0      0.7\n+950.0      1.2\n+===== ========\n+\"\"\"\n+    tbl = ascii.read(table, format=\"ascii.rst\", header_rows=[\"name\", \"unit\"])\n+    assert tbl.colnames == [\"wave\", \"response\"]\n+    assert str(tbl[\"wave\"].unit) == \"nm\"\n+    assert str(tbl[\"response\"].unit) == \"ct\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 524103,
+    "duration_api_ms": 543447,
+    "num_turns": 66,
+    "result": "The implementation is complete. Here's a summary of the changes:\n\n## Summary\n\nThe issue was that `RST.__init__()` didn't accept a `header_rows` parameter, causing a `TypeError` when users tried to write RST tables with multiple header rows (e.g., including units).\n\n### Changes to `astropy/io/ascii/rst.py`:\n\n1. **`RST.__init__`**: Added `header_rows=None` parameter, passes it to the parent `FixedWidth.__init__` which already handles storing it on `self.data.header_rows` and `self.header.header_rows`. Then dynamically sets `self.data.start_line = 2 + len(self.data.header_rows)` to correctly position where data starts when reading back (previously hardcoded to `3` which only worked for 1 header row).\n\n2. **`RST.write`**: Changed from hardcoded `lines[1]` to `lines[idx]` where `idx = len(self.data.header_rows)`. This correctly finds the position line (the `===` separator) regardless of how many header rows precede it.\n\n### Why this works:\n\n`FixedWidthData.write()` produces lines in this order: `[header_row_0, ..., header_row_n-1, position_line, data_row_0, ...]`. The position line is always at index `n` (= `len(header_rows)`). The RST format wraps this by prepending and appending the position line, giving:\n```\n===== ========    \u2190 prepended position line\n wave response    \u2190 header row 0 (name)\n   nm       ct    \u2190 header row 1 (unit)\n===== ========    \u2190 original position line\n350.0      0.7\n950.0      1.2\n===== ========    \u2190 appended position line\n```\n\n### New tests in `astropy/io/ascii/tests/test_rst.py`:\n- `test_write_header_rows()`: Tests writing with `header_rows=[\"name\", \"unit\"]`\n- `test_read_header_rows()`: Tests reading back the same format, verifying column names and units are preserved",
+    "stop_reason": null,
+    "session_id": "77c89620-bfca-4d86-8f2f-401427fd4ed0",
+    "total_cost_usd": 3.2463138000000002,
+    "usage": {
+      "input_tokens": 64,
+      "cache_creation_input_tokens": 71359,
+      "cache_read_input_tokens": 3730806,
+      "output_tokens": 25963,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 71359,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 64,
+        "outputTokens": 25963,
+        "cacheReadInputTokens": 3730806,
+        "cacheCreationInputTokens": 71359,
+        "webSearchRequests": 0,
+        "costUSD": 2.9607917500000003,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 79146,
+        "outputTokens": 10188,
+        "cacheReadInputTokens": 752023,
+        "cacheCreationInputTokens": 64187,
+        "webSearchRequests": 0,
+        "costUSD": 0.28552205,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "8697df56-433f-471b-849d-14d42d3e7ab9"
+  },
+  "session_id": "77c89620-bfca-4d86-8f2f-401427fd4ed0",
+  "result_text": "The implementation is complete. Here's a summary of the changes:\n\n## Summary\n\nThe issue was that `RST.__init__()` didn't accept a `header_rows` parameter, causing a `TypeError` when users tried to write RST tables with multiple header rows (e.g., including units).\n\n### Changes to `astropy/io/ascii/rst.py`:\n\n1. **`RST.__init__`**: Added `header_rows=None` parameter, passes it to the parent `FixedWidth.__init__` which already handles storing it on `self.data.header_rows` and `self.header.header_rows`. Then dynamically sets `self.data.start_line = 2 + len(self.data.header_rows)` to correctly position where data starts when reading back (previously hardcoded to `3` which only worked for 1 header row).\n\n2. **`RST.write`**: Changed from hardcoded `lines[1]` to `lines[idx]` where `idx = len(self.data.header_rows)`. This correctly finds the position line (the `===` separator) regardless of how many header rows precede it.\n\n### Why this works:\n\n`FixedWidthData.write()` produces lines in this order: `[header_row_0, ..., header_row_n-1, position_line, data_row_0, ...]`. The position line is always at index `n` (= `len(header_rows)`). The RST format wraps this by prepending and appending the position line, giving:\n```\n===== ========    \u2190 prepended position line\n wave response    \u2190 header row 0 (name)\n   nm       ct    \u2190 header row 1 (unit)\n===== ========    \u2190 original position line\n350.0      0.7\n950.0      1.2\n===== ========    \u2190 appended position line\n```\n\n### New tests in `astropy/io/ascii/tests/test_rst.py`:\n- `test_write_header_rows()`: Tests writing with `header_rows=[\"name\", \"unit\"]`\n- `test_read_header_rows()`: Tests reading back the same format, verifying column names and units are preserved",
+  "total_cost_usd": 3.2463138000000002,
+  "num_turns": 66
+}

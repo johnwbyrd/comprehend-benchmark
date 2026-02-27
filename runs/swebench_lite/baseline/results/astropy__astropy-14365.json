@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 105,
+  "git_diff": "diff --git a/astropy/io/ascii/qdp.py b/astropy/io/ascii/qdp.py\nindex 83a4f004aa..768beb0de9 100644\n--- a/astropy/io/ascii/qdp.py\n+++ b/astropy/io/ascii/qdp.py\n@@ -68,7 +68,7 @@ def _line_type(line, delimiter=None):\n     _new_re = rf\"NO({sep}NO)+\"\n     _data_re = rf\"({_decimal_re}|NO|[-+]?nan)({sep}({_decimal_re}|NO|[-+]?nan))*)\"\n     _type_re = rf\"^\\s*((?P<command>{_command_re})|(?P<new>{_new_re})|(?P<data>{_data_re})?\\s*(\\!(?P<comment>.*))?\\s*$\"\n-    _line_type_re = re.compile(_type_re)\n+    _line_type_re = re.compile(_type_re, re.IGNORECASE)\n     line = line.strip()\n     if not line:\n         return \"comment\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 102686,
+    "duration_api_ms": 110255,
+    "num_turns": 17,
+    "result": "The fix is minimal and correct. Here's what was changed:\n\n**File:** `astropy/io/ascii/qdp.py`, line 71\n\n**Change:** Added `re.IGNORECASE` flag to the regex compilation:\n```python\n# Before:\n_line_type_re = re.compile(_type_re)\n\n# After:\n_line_type_re = re.compile(_type_re, re.IGNORECASE)\n```\n\n**Why this works:** The `_command_re` pattern `r\"READ [TS]ERR(\\s+[0-9]+)+\"` was only matching uppercase commands. By adding `re.IGNORECASE`, the regex now matches `read serr`, `READ SERR`, `Read Serr`, `read terr`, etc. \u2014 all case variations that QDP itself accepts.\n\nThe fix also correctly makes the `NO` missing-value marker and `NO NO NO...` new-segment marker case-insensitive, which is consistent with QDP's own case-insensitive behavior. The command parsing downstream (line 300) already calls `.lower()` on the command tokens, so it handles mixed-case commands correctly once the line is recognized as a command type.",
+    "stop_reason": null,
+    "session_id": "e75d7b5a-6855-49f1-9731-a596d28a4b21",
+    "total_cost_usd": 0.481646,
+    "usage": {
+      "input_tokens": 19,
+      "cache_creation_input_tokens": 17126,
+      "cache_read_input_tokens": 520875,
+      "output_tokens": 3892,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 17126,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 19,
+        "outputTokens": 3892,
+        "cacheReadInputTokens": 520875,
+        "cacheCreationInputTokens": 17126,
+        "webSearchRequests": 0,
+        "costUSD": 0.46487,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 15211,
+        "outputTokens": 313,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.016775999999999996,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "95303981-e2be-4990-b495-8cf71014e1dd"
+  },
+  "session_id": "e75d7b5a-6855-49f1-9731-a596d28a4b21",
+  "result_text": "The fix is minimal and correct. Here's what was changed:\n\n**File:** `astropy/io/ascii/qdp.py`, line 71\n\n**Change:** Added `re.IGNORECASE` flag to the regex compilation:\n```python\n# Before:\n_line_type_re = re.compile(_type_re)\n\n# After:\n_line_type_re = re.compile(_type_re, re.IGNORECASE)\n```\n\n**Why this works:** The `_command_re` pattern `r\"READ [TS]ERR(\\s+[0-9]+)+\"` was only matching uppercase commands. By adding `re.IGNORECASE`, the regex now matches `read serr`, `READ SERR`, `Read Serr`, `read terr`, etc. \u2014 all case variations that QDP itself accepts.\n\nThe fix also correctly makes the `NO` missing-value marker and `NO NO NO...` new-segment marker case-insensitive, which is consistent with QDP's own case-insensitive behavior. The command parsing downstream (line 300) already calls `.lower()` on the command tokens, so it handles mixed-case commands correctly once the line is recognized as a command type.",
+  "total_cost_usd": 0.481646,
+  "num_turns": 17
+}

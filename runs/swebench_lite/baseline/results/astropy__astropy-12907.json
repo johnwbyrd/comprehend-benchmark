@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 88,
+  "git_diff": "diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py\nindex a308e27297..45bea36085 100644\n--- a/astropy/modeling/separable.py\n+++ b/astropy/modeling/separable.py\n@@ -242,7 +242,7 @@ def _cstack(left, right):\n         cright = _coord_matrix(right, 'right', noutp)\n     else:\n         cright = np.zeros((noutp, right.shape[1]))\n-        cright[-right.shape[0]:, -right.shape[1]:] = 1\n+        cright[-right.shape[0]:, -right.shape[1]:] = right\n \n     return np.hstack([cleft, cright])\n \ndiff --git a/astropy/modeling/tests/test_separable.py b/astropy/modeling/tests/test_separable.py\nindex 8dfe5c8626..514fc58e2c 100644\n--- a/astropy/modeling/tests/test_separable.py\n+++ b/astropy/modeling/tests/test_separable.py\n@@ -52,6 +52,13 @@ compound_models = {\n     'cm7': (map2 | p2 & sh1,\n             (np.array([False, True]),\n              np.array([[True, False], [False, True]]))\n+            ),\n+    'cm8': (rot & (sh1 & sh2),\n+            (np.array([False, False, True, True]),\n+             np.array([[True, True, False, False],\n+                       [True, True, False, False],\n+                       [False, False, True, False],\n+                       [False, False, False, True]]))\n             )\n }\n \n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 85827,
+    "duration_api_ms": 88839,
+    "num_turns": 14,
+    "result": "The fix is clean. Here's a summary of the bug and fix:\n\n**Root cause:** In `_cstack` in `separable.py` (line 245), when the right operand is already a numpy array (i.e., it's the result of a previous `_separable` call on a nested CompoundModel), the code was setting the block to the scalar `1` instead of copying the actual matrix values:\n\n```python\n# Before (bug):\ncright[-right.shape[0]:, -right.shape[1]:] = 1\n\n# After (fix):\ncright[-right.shape[0]:, -right.shape[1]:] = right\n```\n\n**Why it only manifests with nesting:** When the right operand of `&` is a simple `Model`, the code path goes through `_coord_matrix(right, 'right', noutp)` which is correct. But when the right operand is itself a nested `CompoundModel`, `_separable` returns a matrix, and `_cstack` receives that matrix as a numpy array. The array branch incorrectly overwrote the carefully-computed separability values with all-ones (non-separable), causing the nested model's separability information to be lost.\n\nFor example, `m.Pix2Sky_TAN() & cm` (where `cm = Linear1D(10) & Linear1D(5)`) was producing:\n```\n[[ True,  True, False, False],\n [ True,  True, False, False],\n [False, False,  True,  True],   # wrong: should be diagonal\n [False, False,  True,  True]]\n```\nbut now correctly returns the same as the flat `m.Pix2Sky_TAN() & m.Linear1D(10) & m.Linear1D(5)`.",
+    "stop_reason": null,
+    "session_id": "8b6d3d21-6dfe-4097-b3f2-1dae615ed9d1",
+    "total_cost_usd": 0.4670295000000001,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 22876,
+      "cache_read_input_tokens": 415963,
+      "output_tokens": 4210,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 22876,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 16,
+        "outputTokens": 4210,
+        "cacheReadInputTokens": 415963,
+        "cacheCreationInputTokens": 22876,
+        "webSearchRequests": 0,
+        "costUSD": 0.45628650000000004,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 10003,
+        "outputTokens": 148,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.010743,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "2c8bba45-88a0-409e-83f5-bc3c63f3cfd0"
+  },
+  "session_id": "8b6d3d21-6dfe-4097-b3f2-1dae615ed9d1",
+  "result_text": "The fix is clean. Here's a summary of the bug and fix:\n\n**Root cause:** In `_cstack` in `separable.py` (line 245), when the right operand is already a numpy array (i.e., it's the result of a previous `_separable` call on a nested CompoundModel), the code was setting the block to the scalar `1` instead of copying the actual matrix values:\n\n```python\n# Before (bug):\ncright[-right.shape[0]:, -right.shape[1]:] = 1\n\n# After (fix):\ncright[-right.shape[0]:, -right.shape[1]:] = right\n```\n\n**Why it only manifests with nesting:** When the right operand of `&` is a simple `Model`, the code path goes through `_coord_matrix(right, 'right', noutp)` which is correct. But when the right operand is itself a nested `CompoundModel`, `_separable` returns a matrix, and `_cstack` receives that matrix as a numpy array. The array branch incorrectly overwrote the carefully-computed separability values with all-ones (non-separable), causing the nested model's separability information to be lost.\n\nFor example, `m.Pix2Sky_TAN() & cm` (where `cm = Linear1D(10) & Linear1D(5)`) was producing:\n```\n[[ True,  True, False, False],\n [ True,  True, False, False],\n [False, False,  True,  True],   # wrong: should be diagonal\n [False, False,  True,  True]]\n```\nbut now correctly returns the same as the flat `m.Pix2Sky_TAN() & m.Linear1D(10) & m.Linear1D(5)`.",
+  "total_cost_usd": 0.4670295000000001,
+  "num_turns": 14
+}

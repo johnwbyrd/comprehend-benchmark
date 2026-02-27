@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 534,
+  "git_diff": "diff --git a/lib/matplotlib/pyplot.py b/lib/matplotlib/pyplot.py\nindex e3c66ea67c..1e777e32e8 100644\n--- a/lib/matplotlib/pyplot.py\n+++ b/lib/matplotlib/pyplot.py\n@@ -222,6 +222,15 @@ def switch_backend(newbackend):\n     global _backend_mod\n     # make sure the init is pulled up so we can assign to it later\n     import matplotlib.backends\n+\n+    if newbackend is rcsetup._auto_backend_sentinel and _backend_mod is not None:\n+        # If the backend is already initialized and the sentinel was passed (which\n+        # can happen when rc_context exits after a figure was created inside it,\n+        # reverting rcParams['backend'] to the sentinel), restore rcParams['backend']\n+        # to the actual backend name without re-initializing or closing figures.\n+        rcParams['backend'] = dict.__getitem__(rcParamsDefault, \"backend\")\n+        return\n+\n     close(\"all\")\n \n     if newbackend is rcsetup._auto_backend_sentinel:\ndiff --git a/lib/matplotlib/tests/test_pyplot.py b/lib/matplotlib/tests/test_pyplot.py\nindex f824df490c..bc78fdf6dc 100644\n--- a/lib/matplotlib/tests/test_pyplot.py\n+++ b/lib/matplotlib/tests/test_pyplot.py\n@@ -383,3 +383,21 @@ def test_doc_pyplot_summary():\n             f\"The following functions are listed in the pyplot documentation, \"\n             f\"but they do not exist in pyplot. \"\n             f\"Please remove them from doc/api/pyplot_summary.rst: {extra!r}\")\n+\n+\n+def test_get_backend_no_rcparams_revert_on_get_backend():\n+    \"\"\"\n+    Calling get_backend() should not clear figures from Gcf if they were\n+    created inside an rc_context. Regression test for GitHub issue #23298.\n+    \"\"\"\n+    plt.close(\"all\")\n+    with mpl.rc_context():\n+        fig = plt.figure()\n+    figs_before = dict(plt._pylab_helpers.Gcf.figs)\n+    mpl.get_backend()\n+    figs_after = dict(plt._pylab_helpers.Gcf.figs)\n+    assert figs_before == figs_after, (\n+        \"get_backend() cleared figures from Gcf that were created \"\n+        \"inside rc_context\"\n+    )\n+    plt.close(\"all\")\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 531385,
+    "duration_api_ms": 527417,
+    "num_turns": 40,
+    "result": "The fix is complete. Let me provide a clear summary of what was done:\n\n## Summary\n\n**Root Cause:**\n\nWhen a figure is created inside `rc_context()`, the following chain occurs:\n1. `rc_context` saves `orig = rcParams.copy()` \u2014 at this point `rcParams['backend']` is `_auto_backend_sentinel` (the \"auto-detect\" placeholder)\n2. `plt.figure()` triggers `switch_backend(_auto_backend_sentinel)` which auto-detects the backend (e.g., 'agg') and sets `rcParams['backend'] = rcParamsDefault['backend'] = 'agg'`\n3. When `rc_context` exits, `dict.update(rcParams, orig)` reverts `rcParams['backend']` back to `_auto_backend_sentinel`\n4. When `get_backend()` is called, `RcParams.__getitem__` sees the sentinel and calls `plt.switch_backend(_auto_backend_sentinel)` **again**\n5. `switch_backend` calls `close(\"all\")` at its very start \u2014 **this clears all figures from Gcf**\n\n**Fix (in `pyplot.py`'s `switch_backend`):**\n\nAdded an early-return check before `close(\"all\")`: if the sentinel is passed but `_backend_mod` is already set (backend already initialized), there's no real backend switch happening \u2014 just restore `rcParams['backend']` to the actual backend name (from `rcParamsDefault`, which is not reverted by `rc_context`) and return without closing any figures.",
+    "stop_reason": null,
+    "session_id": "857f1db9-b49d-4e6d-b251-6f47d6f511b1",
+    "total_cost_usd": 2.00072675,
+    "usage": {
+      "input_tokens": 38,
+      "cache_creation_input_tokens": 47057,
+      "cache_read_input_tokens": 1912505,
+      "output_tokens": 28756,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 47057,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 38,
+        "outputTokens": 28756,
+        "cacheReadInputTokens": 1912505,
+        "cacheCreationInputTokens": 47057,
+        "webSearchRequests": 0,
+        "costUSD": 1.9694487500000006,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 26578,
+        "outputTokens": 940,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.03127800000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "40aa93a4-14fb-47f1-b98d-4272e6d4a08e"
+  },
+  "session_id": "857f1db9-b49d-4e6d-b251-6f47d6f511b1",
+  "result_text": "The fix is complete. Let me provide a clear summary of what was done:\n\n## Summary\n\n**Root Cause:**\n\nWhen a figure is created inside `rc_context()`, the following chain occurs:\n1. `rc_context` saves `orig = rcParams.copy()` \u2014 at this point `rcParams['backend']` is `_auto_backend_sentinel` (the \"auto-detect\" placeholder)\n2. `plt.figure()` triggers `switch_backend(_auto_backend_sentinel)` which auto-detects the backend (e.g., 'agg') and sets `rcParams['backend'] = rcParamsDefault['backend'] = 'agg'`\n3. When `rc_context` exits, `dict.update(rcParams, orig)` reverts `rcParams['backend']` back to `_auto_backend_sentinel`\n4. When `get_backend()` is called, `RcParams.__getitem__` sees the sentinel and calls `plt.switch_backend(_auto_backend_sentinel)` **again**\n5. `switch_backend` calls `close(\"all\")` at its very start \u2014 **this clears all figures from Gcf**\n\n**Fix (in `pyplot.py`'s `switch_backend`):**\n\nAdded an early-return check before `close(\"all\")`: if the sentinel is passed but `_backend_mod` is already set (backend already initialized), there's no real backend switch happening \u2014 just restore `rcParams['backend']` to the actual backend name (from `rcParamsDefault`, which is not reverted by `rc_context`) and return without closing any figures.",
+  "total_cost_usd": 2.00072675,
+  "num_turns": 40
+}

@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 1655,
+  "git_diff": "diff --git a/CHANGES b/CHANGES\nindex b17c7b202..1c614293e 100644\n--- a/CHANGES\n+++ b/CHANGES\n@@ -55,6 +55,8 @@ Bugs fixed\n * #8419: html search: Do not load ``language_data.js`` in non-search pages\n * #8454: graphviz: The layout option for graph and digraph directives don't work\n * #8437: Makefile: ``make clean`` with empty BUILDDIR is dangerous\n+* #8352: numfig: ``no number is assigned for table`` warning is emitted when\n+  building singlehtml or latex for tables with labels but no captions\n \n Testing\n --------\ndiff --git a/sphinx/environment/collectors/toctree.py b/sphinx/environment/collectors/toctree.py\nindex 14ff4ed74..3c009c735 100644\n--- a/sphinx/environment/collectors/toctree.py\n+++ b/sphinx/environment/collectors/toctree.py\n@@ -223,10 +223,6 @@ class TocTreeCollector(EnvironmentCollector):\n         def get_figtype(node: Node) -> str:\n             for domain in env.domains.values():\n                 figtype = domain.get_enumerable_node_type(node)\n-                if domain.name == 'std' and not domain.get_numfig_title(node):  # type: ignore\n-                    # Skip if uncaptioned node\n-                    continue\n-\n                 if figtype:\n                     return figtype\n \ndiff --git a/tests/test_build_html.py b/tests/test_build_html.py\nindex 6b66a2c67..2bf0fa043 100644\n--- a/tests/test_build_html.py\n+++ b/tests/test_build_html.py\n@@ -1158,6 +1158,15 @@ def test_numfig_with_singlehtml(app, cached_etree_parse, fname, expect):\n     check_xpath(cached_etree_parse(app.outdir / fname), fname, *expect)\n \n \n+@pytest.mark.sphinx('singlehtml', testroot='numfig-fix')\n+def test_numfig_with_singlehtml_and_uncaptioned_table(app, warning):\n+    # Labeled tables without captions should not emit \"no number is assigned\" warning\n+    # See https://github.com/sphinx-doc/sphinx/issues/8352\n+    app.build()\n+    warnings = warning.getvalue()\n+    assert 'no number is assigned for table' not in warnings\n+\n+\n @pytest.mark.parametrize(\"fname,expect\", flat_dict({\n     'index.html': [\n         (\".//div[@class='figure align-default']/p[@class='caption']\"\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 1652709,
+    "duration_api_ms": 1706985,
+    "num_turns": 111,
+    "result": "The changes look good. Let me summarize what was done:\n\n## Summary\n\n**Root Cause**: In Sphinx 3.3, commit `66dda1fc5` modified `get_figtype()` in `sphinx/environment/collectors/toctree.py` to skip uncaptioned nodes when assigning figure numbers. The intent was to prevent uncaptioned items from unexpectedly consuming sequence numbers.\n\nHowever, this fix caused a regression: tables and figures that have **explicit labels** (via `.. _label:` or `:name:`) but **no captions** stopped getting numbers assigned. When users referenced such items via `:numref:`, Sphinx would emit `WARNING: no number is assigned for table:`.\n\n**Why it's a regression**: When a user explicitly labels a table (e.g., `.. _mytable:`), they intend to reference it. The `:numref:` role works by finding the assigned figure number for the labeled item. Without a number, it fails with a warning.\n\n**Key insight**: The check `if figtype and subnode['ids']:` in `_walk_doctree()` already ensures that only items with explicit IDs (from labels) get registered. The `AutoNumbering` transform only auto-generates IDs for **captioned** items. So truly unlabeled, uncaptioned items never had IDs and were never registered anyway \u2014 the `get_figtype()` caption check was redundant and harmful.\n\n**Fix**: Removed the redundant caption check from `get_figtype()` in `toctree.py`, restoring pre-3.3 behavior where labeled items (captioned or not) can be numbered and referenced via `:numref:`.",
+    "stop_reason": null,
+    "session_id": "47a7e80b-bd41-4bda-bfb2-fc9037d981b4",
+    "total_cost_usd": 7.7701405999999995,
+    "usage": {
+      "input_tokens": 110,
+      "cache_creation_input_tokens": 129682,
+      "cache_read_input_tokens": 9427991,
+      "output_tokens": 76583,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 129682,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 110,
+        "outputTokens": 76583,
+        "cacheReadInputTokens": 9427991,
+        "cacheCreationInputTokens": 129682,
+        "webSearchRequests": 0,
+        "costUSD": 7.4396330000000015,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 105756,
+        "outputTokens": 14677,
+        "cacheReadInputTokens": 972141,
+        "cacheCreationInputTokens": 43322,
+        "webSearchRequests": 0,
+        "costUSD": 0.33050760000000023,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "5507c41f-1d2b-47fc-b0d0-82963a64e638"
+  },
+  "session_id": "47a7e80b-bd41-4bda-bfb2-fc9037d981b4",
+  "result_text": "The changes look good. Let me summarize what was done:\n\n## Summary\n\n**Root Cause**: In Sphinx 3.3, commit `66dda1fc5` modified `get_figtype()` in `sphinx/environment/collectors/toctree.py` to skip uncaptioned nodes when assigning figure numbers. The intent was to prevent uncaptioned items from unexpectedly consuming sequence numbers.\n\nHowever, this fix caused a regression: tables and figures that have **explicit labels** (via `.. _label:` or `:name:`) but **no captions** stopped getting numbers assigned. When users referenced such items via `:numref:`, Sphinx would emit `WARNING: no number is assigned for table:`.\n\n**Why it's a regression**: When a user explicitly labels a table (e.g., `.. _mytable:`), they intend to reference it. The `:numref:` role works by finding the assigned figure number for the labeled item. Without a number, it fails with a warning.\n\n**Key insight**: The check `if figtype and subnode['ids']:` in `_walk_doctree()` already ensures that only items with explicit IDs (from labels) get registered. The `AutoNumbering` transform only auto-generates IDs for **captioned** items. So truly unlabeled, uncaptioned items never had IDs and were never registered anyway \u2014 the `get_figtype()` caption check was redundant and harmful.\n\n**Fix**: Removed the redundant caption check from `get_figtype()` in `toctree.py`, restoring pre-3.3 behavior where labeled items (captioned or not) can be numbered and referenced via `:numref:`.",
+  "total_cost_usd": 7.7701405999999995,
+  "num_turns": 111
+}

@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 236,
+  "git_diff": "diff --git a/sphinx/util/rst.py b/sphinx/util/rst.py\nindex 7a1538325..cd82916f0 100644\n--- a/sphinx/util/rst.py\n+++ b/sphinx/util/rst.py\n@@ -25,7 +25,7 @@ except ImportError:\n \n logger = logging.getLogger(__name__)\n \n-docinfo_re = re.compile(':\\\\w+:.*?')\n+docinfo_re = re.compile(':\\\\w+:( |$)')\n symbols_re = re.compile(r'([!-\\-/:-@\\[-`{-~])')  # symbols without dot(0x2e)\n SECTIONING_CHARS = ['=', '-', '~']\n \ndiff --git a/tests/test_util_rst.py b/tests/test_util_rst.py\nindex 40a2ee68b..cd425b61e 100644\n--- a/tests/test_util_rst.py\n+++ b/tests/test_util_rst.py\n@@ -63,6 +63,25 @@ def test_prepend_prolog_with_CR(app):\n                                       ('dummy.rst', 1, 'Sphinx is a document generator')]\n \n \n+def test_prepend_prolog_with_roles_in_first_heading(app):\n+    # Ensure a domain role in the first heading is not confused with a docinfo field\n+    prolog = 'this is rst_prolog\\nhello reST!'\n+    content = StringList([':mod:`mypackage2`',\n+                          '=================',\n+                          '',\n+                          'Content'],\n+                         'dummy.rst')\n+    prepend_prolog(content, prolog)\n+\n+    assert list(content.xitems()) == [('<rst_prolog>', 0, 'this is rst_prolog'),\n+                                      ('<rst_prolog>', 1, 'hello reST!'),\n+                                      ('<generated>', 0, ''),\n+                                      ('dummy.rst', 0, ':mod:`mypackage2`'),\n+                                      ('dummy.rst', 1, '================='),\n+                                      ('dummy.rst', 2, ''),\n+                                      ('dummy.rst', 3, 'Content')]\n+\n+\n def test_prepend_prolog_without_CR(app):\n     # prolog not having CR at tail\n     prolog = 'this is rst_prolog\\nhello reST!'\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 234390,
+    "duration_api_ms": 249026,
+    "num_turns": 18,
+    "result": "Both changes look correct. Here's a summary of the fix:\n\n## Summary\n\n**Root cause:** In `sphinx/util/rst.py`, the `prepend_prolog()` function uses a regex `docinfo_re = re.compile(':\\\\w+:.*?')` to skip over RST docinfo fields (like `:Author: Name`) at the top of a document, so the prolog can be inserted after them. However, this regex is too broad \u2014 it also matches RST domain role syntax like `:mod:`mypackage2`` (which starts with `:\\w+:`).\n\nWhen a document starts with a heading containing a domain role (e.g., `:mod:`mypackage2`\\n=================`), the function incorrectly treats the heading text as a docinfo field and inserts the prolog **between** the heading text and its underline (`=====`), completely breaking the heading structure.\n\n**Fix:** Changed the regex from `':\\\\w+:.*?'` to `':\\\\w+:( |$)'`. This requires the colon after the field name to be followed by either a space or end-of-string \u2014 matching real docinfo fields (`:Author: Name`, `:orphan:`) but **not** RST role references (`:mod:`name``, `:ref:`text``).\n\n**Files changed:**\n- `sphinx/util/rst.py:28` \u2014 regex fix\n- `tests/test_util_rst.py` \u2014 added `test_prepend_prolog_with_roles_in_first_heading` test case",
+    "stop_reason": null,
+    "session_id": "eb92ab07-0429-4f23-98de-1c8c33eb26d7",
+    "total_cost_usd": 0.8400330000000003,
+    "usage": {
+      "input_tokens": 19,
+      "cache_creation_input_tokens": 22937,
+      "cache_read_input_tokens": 577829,
+      "output_tokens": 8108,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 22937,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 19,
+        "outputTokens": 8108,
+        "cacheReadInputTokens": 577829,
+        "cacheCreationInputTokens": 22937,
+        "webSearchRequests": 0,
+        "costUSD": 0.6350657500000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 25875,
+        "outputTokens": 6123,
+        "cacheReadInputTokens": 953360,
+        "cacheCreationInputTokens": 42513,
+        "webSearchRequests": 0,
+        "costUSD": 0.20496725,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "91a822bc-afe5-40ca-bc21-2ca2a1457afc"
+  },
+  "session_id": "eb92ab07-0429-4f23-98de-1c8c33eb26d7",
+  "result_text": "Both changes look correct. Here's a summary of the fix:\n\n## Summary\n\n**Root cause:** In `sphinx/util/rst.py`, the `prepend_prolog()` function uses a regex `docinfo_re = re.compile(':\\\\w+:.*?')` to skip over RST docinfo fields (like `:Author: Name`) at the top of a document, so the prolog can be inserted after them. However, this regex is too broad \u2014 it also matches RST domain role syntax like `:mod:`mypackage2`` (which starts with `:\\w+:`).\n\nWhen a document starts with a heading containing a domain role (e.g., `:mod:`mypackage2`\\n=================`), the function incorrectly treats the heading text as a docinfo field and inserts the prolog **between** the heading text and its underline (`=====`), completely breaking the heading structure.\n\n**Fix:** Changed the regex from `':\\\\w+:.*?'` to `':\\\\w+:( |$)'`. This requires the colon after the field name to be followed by either a space or end-of-string \u2014 matching real docinfo fields (`:Author: Name`, `:orphan:`) but **not** RST role references (`:mod:`name``, `:ref:`text``).\n\n**Files changed:**\n- `sphinx/util/rst.py:28` \u2014 regex fix\n- `tests/test_util_rst.py` \u2014 added `test_prepend_prolog_with_roles_in_first_heading` test case",
+  "total_cost_usd": 0.8400330000000003,
+  "num_turns": 18
+}

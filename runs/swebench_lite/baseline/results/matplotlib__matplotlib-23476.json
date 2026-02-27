@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 159,
+  "git_diff": "diff --git a/lib/matplotlib/backend_bases.py b/lib/matplotlib/backend_bases.py\nindex 9ae2982c62..21795ab755 100644\n--- a/lib/matplotlib/backend_bases.py\n+++ b/lib/matplotlib/backend_bases.py\n@@ -1653,8 +1653,9 @@ class FigureCanvasBase:\n         self.toolbar = None  # NavigationToolbar2 will set me\n         self._is_idle_drawing = False\n         # We don't want to scale up the figure DPI more than once.\n-        figure._original_dpi = figure.dpi\n         self._device_pixel_ratio = 1\n+        if not hasattr(figure, '_original_dpi'):\n+            figure._original_dpi = figure.dpi\n         super().__init__()  # Typically the GUI widget init (if any).\n \n     callbacks = property(lambda self: self.figure._canvas_callbacks)\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 156768,
+    "duration_api_ms": 155605,
+    "num_turns": 20,
+    "result": "The fix is correct. Here's a summary of the bug and the fix:\n\n**Root cause:** When a figure is pickled on a Retina/HiDPI display (M1 Mac), the figure's `dpi` attribute is already doubled (e.g., `100 \u2192 200`) by the Mac backend's `_set_device_pixel_ratio(2)` call, while `_original_dpi` is correctly preserved as `100`.\n\nWhen unpickling, `figure.__dict__` is restored correctly with `dpi=200` and `_original_dpi=100`. But then `FigureCanvasBase.__init__` (line 1656, old code) unconditionally overwrote `figure._original_dpi = figure.dpi`, setting it to `200`. When `_set_device_pixel_ratio(2)` was subsequently called by the Mac backend, it computed `dpi = 2 * 200 = 400` \u2014 doubling it again.\n\n**Fix:** Changed the unconditional assignment to a conditional one:\n```python\nif not hasattr(figure, '_original_dpi'):\n    figure._original_dpi = figure.dpi\n```\n\nThis preserves the correctly-restored `_original_dpi=100` from the pickle state, so the subsequent `_set_device_pixel_ratio(2)` correctly computes `dpi = 2 * 100 = 200` instead of doubling to `400`.",
+    "stop_reason": null,
+    "session_id": "c3f11ee1-5194-4f0b-be59-4012aa7de2d5",
+    "total_cost_usd": 0.7917929999999999,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 34074,
+      "cache_read_input_tokens": 631931,
+      "output_tokens": 10511,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 34074,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 18,
+        "outputTokens": 10511,
+        "cacheReadInputTokens": 631931,
+        "cacheCreationInputTokens": 34074,
+        "webSearchRequests": 0,
+        "costUSD": 0.7917929999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "338a6e7e-6c0a-4958-a092-57faa7189c0a"
+  },
+  "session_id": "c3f11ee1-5194-4f0b-be59-4012aa7de2d5",
+  "result_text": "The fix is correct. Here's a summary of the bug and the fix:\n\n**Root cause:** When a figure is pickled on a Retina/HiDPI display (M1 Mac), the figure's `dpi` attribute is already doubled (e.g., `100 \u2192 200`) by the Mac backend's `_set_device_pixel_ratio(2)` call, while `_original_dpi` is correctly preserved as `100`.\n\nWhen unpickling, `figure.__dict__` is restored correctly with `dpi=200` and `_original_dpi=100`. But then `FigureCanvasBase.__init__` (line 1656, old code) unconditionally overwrote `figure._original_dpi = figure.dpi`, setting it to `200`. When `_set_device_pixel_ratio(2)` was subsequently called by the Mac backend, it computed `dpi = 2 * 200 = 400` \u2014 doubling it again.\n\n**Fix:** Changed the unconditional assignment to a conditional one:\n```python\nif not hasattr(figure, '_original_dpi'):\n    figure._original_dpi = figure.dpi\n```\n\nThis preserves the correctly-restored `_original_dpi=100` from the pickle state, so the subsequent `_set_device_pixel_ratio(2)` correctly computes `dpi = 2 * 100 = 200` instead of doubling to `400`.",
+  "total_cost_usd": 0.7917929999999999,
+  "num_turns": 20
+}

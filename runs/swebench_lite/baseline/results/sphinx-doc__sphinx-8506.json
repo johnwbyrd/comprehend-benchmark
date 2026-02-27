@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/sphinx-doc__sphinx",
+  "wall_time_seconds": 515,
+  "git_diff": "diff --git a/sphinx/domains/std.py b/sphinx/domains/std.py\nindex c87217c56..d3c8768b6 100644\n--- a/sphinx/domains/std.py\n+++ b/sphinx/domains/std.py\n@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)\n \n \n # RE for option descriptions\n-option_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n+option_desc_re = re.compile(r'((?:/|--|-|\\+)?(?:\\[.*?\\]|[^\\s=[]+))(=?\\s*.*)')\n # RE for grammar tokens\n token_re = re.compile(r'`(\\w+)`', re.U)\n \ndiff --git a/tests/test_domain_std.py b/tests/test_domain_std.py\nindex 7ee1d6c07..ab11e4fd3 100644\n--- a/tests/test_domain_std.py\n+++ b/tests/test_domain_std.py\n@@ -327,6 +327,21 @@ def test_multiple_cmdoptions(app):\n     assert domain.progoptions[('cmd', '--output')] == ('index', 'cmdoption-cmd-o')\n \n \n+def test_cmdoption_with_optional_prefix(app):\n+    # Test that options with bracket notation (like QEMU's [enable=]PATTERN)\n+    # are accepted without warning (regression test for GH-8535)\n+    text = (\".. program:: qemu\\n\"\n+            \"\\n\"\n+            \".. option:: [enable=]PATTERN\\n\")\n+    domain = app.env.get_domain('std')\n+    doctree = restructuredtext.parse(app, text)\n+    assert_node(doctree, (addnodes.index,\n+                          [desc, ([desc_signature, ([desc_name, \"[enable=]\"],\n+                                                    [desc_addname, \"PATTERN\"])],\n+                                  [desc_content, ()])]))\n+    assert ('qemu', '[enable=]') in domain.progoptions\n+\n+\n @pytest.mark.skipif(docutils.__version_info__ < (0, 13),\n                     reason='docutils-0.13 or above is required')\n @pytest.mark.sphinx(testroot='productionlist')\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 512866,
+    "duration_api_ms": 514987,
+    "num_turns": 39,
+    "result": "The fix is clean and correct. Here's a summary of what was done:\n\n## Summary\n\n**Problem:** Sphinx 3.2 introduced strict validation of option syntax in the `.. option::` directive via the `option_desc_re` regex. The regex `r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)'` excluded `[` from the character class `[^\\s=[]+`, causing QEMU-style options like `[enable=]PATTERN` to fail matching and emit a warning (which broke builds using `-W`/`warningiserror`).\n\n**Root cause:** `/sphinx/domains/std.py` line 46 - the character class `[^\\s=[]+` explicitly excluded `[`, preventing bracket-notation options from matching.\n\n**Fix:** Updated the regex from:\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\nto:\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?(?:\\[.*?\\]|[^\\s=[]+))(=?\\s*.*)')\n```\n\nThe change adds `(?:\\[.*?\\]|...)` as an alternative for the option name part \u2014 the regex now accepts either:\n1. A bracketed expression like `[enable=]` (matched by `\\[.*?\\]`)\n2. Or the existing non-special character sequence (matched by `[^\\s=[]+`)\n\nThis means `[enable=]PATTERN` now parses as `optname='[enable=]'`, `args='PATTERN'` without any warning, while all standard option formats (`-f`, `--foo=VALUE`, `--opt[=val]`, etc.) continue to work exactly as before.\n\n**Test added:** `test_cmdoption_with_optional_prefix` in `tests/test_domain_std.py` verifies that bracket-notation options are accepted and produce correct doctree nodes.",
+    "stop_reason": null,
+    "session_id": "be9a79c6-9a9b-4ce8-8ef5-337072743b34",
+    "total_cost_usd": 2.0065474,
+    "usage": {
+      "input_tokens": 39,
+      "cache_creation_input_tokens": 46232,
+      "cache_read_input_tokens": 1872345,
+      "output_tokens": 26101,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 46232,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 39,
+        "outputTokens": 26101,
+        "cacheReadInputTokens": 1872345,
+        "cacheCreationInputTokens": 46232,
+        "webSearchRequests": 0,
+        "costUSD": 1.8778424999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 42412,
+        "outputTokens": 3108,
+        "cacheReadInputTokens": 365954,
+        "cacheCreationInputTokens": 27326,
+        "webSearchRequests": 0,
+        "costUSD": 0.12870490000000007,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "66462b06-ef29-4800-b08f-1b53b72b91e0"
+  },
+  "session_id": "be9a79c6-9a9b-4ce8-8ef5-337072743b34",
+  "result_text": "The fix is clean and correct. Here's a summary of what was done:\n\n## Summary\n\n**Problem:** Sphinx 3.2 introduced strict validation of option syntax in the `.. option::` directive via the `option_desc_re` regex. The regex `r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)'` excluded `[` from the character class `[^\\s=[]+`, causing QEMU-style options like `[enable=]PATTERN` to fail matching and emit a warning (which broke builds using `-W`/`warningiserror`).\n\n**Root cause:** `/sphinx/domains/std.py` line 46 - the character class `[^\\s=[]+` explicitly excluded `[`, preventing bracket-notation options from matching.\n\n**Fix:** Updated the regex from:\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?[^\\s=[]+)(=?\\s*.*)')\n```\nto:\n```python\noption_desc_re = re.compile(r'((?:/|--|-|\\+)?(?:\\[.*?\\]|[^\\s=[]+))(=?\\s*.*)')\n```\n\nThe change adds `(?:\\[.*?\\]|...)` as an alternative for the option name part \u2014 the regex now accepts either:\n1. A bracketed expression like `[enable=]` (matched by `\\[.*?\\]`)\n2. Or the existing non-special character sequence (matched by `[^\\s=[]+`)\n\nThis means `[enable=]PATTERN` now parses as `optname='[enable=]'`, `args='PATTERN'` without any warning, while all standard option formats (`-f`, `--foo=VALUE`, `--opt[=val]`, etc.) continue to work exactly as before.\n\n**Test added:** `test_cmdoption_with_optional_prefix` in `tests/test_domain_std.py` verifies that bracket-notation options are accepted and produce correct doctree nodes.",
+  "total_cost_usd": 2.0065474,
+  "num_turns": 39
+}

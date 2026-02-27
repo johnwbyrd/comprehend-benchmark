@@ -1,0 +1,54 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 37,
+  "git_diff": "diff --git a/requests/utils.py b/requests/utils.py\nindex 8d17b6b2..99f8655b 100644\n--- a/requests/utils.py\n+++ b/requests/utils.py\n@@ -360,9 +360,7 @@ def stream_decode_response_unicode(iterator, r):\n     \"\"\"Stream decodes a iterator.\"\"\"\n \n     if r.encoding is None:\n-        for item in iterator:\n-            yield item\n-        return\n+        r.encoding = r.apparent_encoding\n \n     decoder = codecs.getincrementaldecoder(r.encoding)(errors='replace')\n     for chunk in iterator:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 35486,
+    "duration_api_ms": 34811,
+    "num_turns": 10,
+    "result": "The fix is in `requests/utils.py:362-363`. \n\n**Root cause:** `stream_decode_response_unicode` had an early-return path that yielded raw bytes unchanged when `r.encoding is None`. This is the case for responses like `application/json` that don't specify a `charset` in the Content-Type header.\n\n**The inconsistency with `r.text`:** `r.text` (in `models.py:778`) falls back to `r.apparent_encoding` (chardet detection) when `r.encoding is None`, so it always returns unicode. `iter_content(decode_unicode=True)` was not doing the same fallback.\n\n**The fix:** When `r.encoding is None`, set it to `r.apparent_encoding` before constructing the incremental decoder \u2014 exactly mirroring the logic in `r.text`. This ensures `iter_content(decode_unicode=True)` returns unicode strings consistently, even when no charset is declared in the response headers.",
+    "stop_reason": null,
+    "session_id": "3bb18c8d-ca0a-4762-af3a-8b7ccfa9cb61",
+    "total_cost_usd": 0.2651185,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 12106,
+      "cache_read_input_tokens": 274842,
+      "output_tokens": 2079,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12106,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 12,
+        "outputTokens": 2079,
+        "cacheReadInputTokens": 274842,
+        "cacheCreationInputTokens": 12106,
+        "webSearchRequests": 0,
+        "costUSD": 0.2651185,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "a416c433-e6c0-4419-8833-eb65b7df4392"
+  },
+  "session_id": "3bb18c8d-ca0a-4762-af3a-8b7ccfa9cb61",
+  "result_text": "The fix is in `requests/utils.py:362-363`. \n\n**Root cause:** `stream_decode_response_unicode` had an early-return path that yielded raw bytes unchanged when `r.encoding is None`. This is the case for responses like `application/json` that don't specify a `charset` in the Content-Type header.\n\n**The inconsistency with `r.text`:** `r.text` (in `models.py:778`) falls back to `r.apparent_encoding` (chardet detection) when `r.encoding is None`, so it always returns unicode. `iter_content(decode_unicode=True)` was not doing the same fallback.\n\n**The fix:** When `r.encoding is None`, set it to `r.apparent_encoding` before constructing the incremental decoder \u2014 exactly mirroring the logic in `r.text`. This ensures `iter_content(decode_unicode=True)` returns unicode strings consistently, even when no charset is declared in the response headers.",
+  "total_cost_usd": 0.2651185,
+  "num_turns": 10
+}

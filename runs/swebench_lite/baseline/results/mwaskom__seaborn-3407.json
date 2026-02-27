@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/mwaskom__seaborn",
+  "wall_time_seconds": 589,
+  "git_diff": "diff --git a/seaborn/axisgrid.py b/seaborn/axisgrid.py\nindex 75349099..f8709e02 100644\n--- a/seaborn/axisgrid.py\n+++ b/seaborn/axisgrid.py\n@@ -1472,7 +1472,9 @@ class PairGrid(Grid):\n                 for ax in diag_axes[1:]:\n                     share_axis(diag_axes[0], ax, \"y\")\n \n-            self.diag_vars = np.array(diag_vars, np.object_)\n+            diag_vars_arr = np.empty(len(diag_vars), dtype=object)\n+            diag_vars_arr[:] = diag_vars\n+            self.diag_vars = diag_vars_arr\n             self.diag_axes = np.array(diag_axes, np.object_)\n \n         if \"hue\" not in signature(func).parameters:\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 587334,
+    "duration_api_ms": 578543,
+    "num_turns": 43,
+    "result": "The fix is correct. Let me explain the issue and fix clearly:\n\n**Root cause**: When `diag_vars` is a list of tuples (from MultiIndex column names like `(\"A\", \"1\")`, `(\"A\", \"2\")`, etc.), `np.array(diag_vars, np.object_)` creates a **2D array** of shape `(N, 2)` because NumPy tries to unpack same-length sequences into a matrix. This means when iterating `for var, ax in zip(self.diag_vars, ...)`, `var` becomes a numpy row array `array([\"A\", \"1\"])` instead of the tuple `(\"A\", \"1\")`.\n\nWhen this array is then used as `self.data[var]`, pandas interprets it as a list of column names `[\"A\", \"1\"]`. For a MultiIndex DataFrame, pandas tries to select \"A\" and \"1\" individually at level-0. \"A\" is found but \"1\" is not a top-level key, so it raises `KeyError: \"['1'] not in index\"`.\n\n**Fix**: Create the 1D object array explicitly with `np.empty(N, dtype=object)` then assign elements. This forces NumPy to store each tuple as a single object element rather than unpacking it. After the fix, `var` correctly holds the tuple `(\"A\", \"1\")`, and `self.data[(\"A\", \"1\")]` uses hashable-key lookup which works correctly with MultiIndex DataFrames via `_getitem_multilevel`.",
+    "stop_reason": null,
+    "session_id": "83a33d32-398a-4316-91de-6499c575618d",
+    "total_cost_usd": 2.270303749999999,
+    "usage": {
+      "input_tokens": 41,
+      "cache_creation_input_tokens": 55443,
+      "cache_read_input_tokens": 2195146,
+      "output_tokens": 32229,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 55443,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 41,
+        "outputTokens": 32229,
+        "cacheReadInputTokens": 2195146,
+        "cacheCreationInputTokens": 55443,
+        "webSearchRequests": 0,
+        "costUSD": 2.2500217499999997,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 17262,
+        "outputTokens": 604,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.020281999999999994,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "e8fcc889-fac2-4aa6-80e0-3f18eef77de4"
+  },
+  "session_id": "83a33d32-398a-4316-91de-6499c575618d",
+  "result_text": "The fix is correct. Let me explain the issue and fix clearly:\n\n**Root cause**: When `diag_vars` is a list of tuples (from MultiIndex column names like `(\"A\", \"1\")`, `(\"A\", \"2\")`, etc.), `np.array(diag_vars, np.object_)` creates a **2D array** of shape `(N, 2)` because NumPy tries to unpack same-length sequences into a matrix. This means when iterating `for var, ax in zip(self.diag_vars, ...)`, `var` becomes a numpy row array `array([\"A\", \"1\"])` instead of the tuple `(\"A\", \"1\")`.\n\nWhen this array is then used as `self.data[var]`, pandas interprets it as a list of column names `[\"A\", \"1\"]`. For a MultiIndex DataFrame, pandas tries to select \"A\" and \"1\" individually at level-0. \"A\" is found but \"1\" is not a top-level key, so it raises `KeyError: \"['1'] not in index\"`.\n\n**Fix**: Create the 1D object array explicitly with `np.empty(N, dtype=object)` then assign elements. This forces NumPy to store each tuple as a single object element rather than unpacking it. After the fix, `var` correctly holds the tuple `(\"A\", \"1\")`, and `self.data[(\"A\", \"1\")]` uses hashable-key lookup which works correctly with MultiIndex DataFrames via `_getitem_multilevel`.",
+  "total_cost_usd": 2.270303749999999,
+  "num_turns": 43
+}

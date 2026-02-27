@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/psf__requests",
+  "wall_time_seconds": 32,
+  "git_diff": "diff --git a/requests/sessions.py b/requests/sessions.py\nindex d701ff2e..adcfbac7 100644\n--- a/requests/sessions.py\n+++ b/requests/sessions.py\n@@ -425,7 +425,7 @@ class Session(SessionRedirectMixin):\n             If Tuple, ('cert', 'key') pair.\n         \"\"\"\n \n-        method = builtin_str(method)\n+        method = to_native_string(method)\n \n         # Create the Request.\n         req = Request(\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 29866,
+    "duration_api_ms": 29449,
+    "num_turns": 8,
+    "result": "The fix replaces `builtin_str(method)` with `to_native_string(method)` in `sessions.py:428`.\n\n**Root cause:** In Python 3, `builtin_str` is just `str`. Calling `str(b'GET')` produces the literal string `\"b'GET'\"` \u2014 the repr of the bytes object \u2014 rather than decoding it.\n\n**Fix:** `to_native_string()` already exists in `requests/utils.py` and handles this correctly: if the input is already a native string it passes through unchanged; if it's bytes it calls `.decode('ascii')` to produce the proper string `'GET'`.",
+    "stop_reason": null,
+    "session_id": "9c078281-4986-45ad-a8f3-cfe5cbf140aa",
+    "total_cost_usd": 0.16800900000000002,
+    "usage": {
+      "input_tokens": 9,
+      "cache_creation_input_tokens": 8068,
+      "cache_read_input_tokens": 171228,
+      "output_tokens": 1277,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 8068,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 9,
+        "outputTokens": 1277,
+        "cacheReadInputTokens": 171228,
+        "cacheCreationInputTokens": 8068,
+        "webSearchRequests": 0,
+        "costUSD": 0.16800900000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "c7189d95-edef-4c27-ab2e-f3b385c30542"
+  },
+  "session_id": "9c078281-4986-45ad-a8f3-cfe5cbf140aa",
+  "result_text": "The fix replaces `builtin_str(method)` with `to_native_string(method)` in `sessions.py:428`.\n\n**Root cause:** In Python 3, `builtin_str` is just `str`. Calling `str(b'GET')` produces the literal string `\"b'GET'\"` \u2014 the repr of the bytes object \u2014 rather than decoding it.\n\n**Fix:** `to_native_string()` already exists in `requests/utils.py` and handles this correctly: if the input is already a native string it passes through unchanged; if it's bytes it calls `.decode('ascii')` to produce the proper string `'GET'`.",
+  "total_cost_usd": 0.16800900000000002,
+  "num_turns": 8
+}

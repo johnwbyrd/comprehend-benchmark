@@ -1,0 +1,64 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/astropy__astropy",
+  "wall_time_seconds": 467,
+  "git_diff": "diff --git a/astropy/io/ascii/rst.py b/astropy/io/ascii/rst.py\nindex abdeba8efb..21d980bec5 100644\n--- a/astropy/io/ascii/rst.py\n+++ b/astropy/io/ascii/rst.py\n@@ -27,7 +27,6 @@ class SimpleRSTHeader(FixedWidthHeader):\n \n \n class SimpleRSTData(FixedWidthData):\n-    start_line = 3\n     end_line = -1\n     splitter_class = FixedWidthTwoLineDataSplitter\n \n@@ -57,10 +56,15 @@ class RST(FixedWidth):\n     data_class = SimpleRSTData\n     header_class = SimpleRSTHeader\n \n-    def __init__(self):\n-        super().__init__(delimiter_pad=None, bookend=False)\n+    def __init__(self, header_rows=None):\n+        super().__init__(delimiter_pad=None, bookend=False, header_rows=header_rows)\n \n     def write(self, lines):\n         lines = super().write(lines)\n-        lines = [lines[1]] + lines + [lines[1]]\n+        idx = len(self.header.header_rows)\n+        lines = [lines[idx]] + lines + [lines[idx]]\n         return lines\n+\n+    def read(self, table):\n+        self.data.start_line = 2 + len(self.header.header_rows)\n+        return super().read(table)\ndiff --git a/astropy/io/ascii/tests/test_rst.py b/astropy/io/ascii/tests/test_rst.py\nindex 84d6fed401..a25fe945b6 100644\n--- a/astropy/io/ascii/tests/test_rst.py\n+++ b/astropy/io/ascii/tests/test_rst.py\n@@ -2,7 +2,9 @@\n \n from io import StringIO\n \n+import astropy.units as u\n from astropy.io import ascii\n+from astropy.table import QTable\n \n from .common import assert_almost_equal, assert_equal\n \n@@ -185,3 +187,22 @@ Col1      Col2 Col3 Col4\n ==== ========= ==== ====\n \"\"\",\n     )\n+\n+\n+def test_write_header_rows():\n+    \"\"\"Write a QTable as RST with header_rows showing name and unit\"\"\"\n+    tbl = QTable({\"wave\": [350, 950] * u.nm, \"response\": [0.7, 1.2] * u.count})\n+    out = StringIO()\n+    tbl.write(out, format=\"ascii.rst\", header_rows=[\"name\", \"unit\"])\n+    assert_equal_splitlines(\n+        out.getvalue(),\n+        \"\"\"\\\n+===== ========\n+ wave response\n+   nm       ct\n+===== ========\n+350.0      0.7\n+950.0      1.2\n+===== ========\n+\"\"\",\n+    )\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 464135,
+    "duration_api_ms": 452460,
+    "num_turns": 66,
+    "result": "The final implementation looks clean and complete. Let me summarize the changes made:\n\n## Summary of Changes\n\n### `astropy/io/ascii/rst.py`\n\n**Problem:** The `RST` class didn't accept the `header_rows` parameter that `FixedWidth` (its parent class) supports.\n\n**Changes:**\n\n1. **`SimpleRSTData`** - Removed hardcoded `start_line = 3`. The data start line now depends on how many header rows are present, so it's computed dynamically.\n\n2. **`RST.__init__()`** - Added `header_rows=None` parameter and passes it to the parent `FixedWidth.__init__()`.\n\n3. **`RST.write()`** - Changed the hardcoded `lines[1]` separator index to `lines[len(self.header.header_rows)]`. With a single header row, this is still index 1 (unchanged behavior). With two header rows, it's index 2, etc.\n\n4. **`RST.read()`** - Added new method that dynamically sets `data.start_line = 2 + len(self.header.header_rows)` before calling the parent's `read()`. This ensures reading also works correctly when `header_rows` has been customized.\n\n### `astropy/io/ascii/tests/test_rst.py`\n\nAdded `test_write_header_rows()` test that verifies a `QTable` with units can be written in RST format with `header_rows=[\"name\", \"unit\"]`.\n\n**Expected RST output with `header_rows=[\"name\", \"unit\"]`:**\n```\n===== ========\n wave response\n   nm       ct\n===== ========\n350.0      0.7\n950.0      1.2\n===== ========\n```",
+    "stop_reason": null,
+    "session_id": "14fb6339-bd51-4d65-af09-686b4a88a14b",
+    "total_cost_usd": 2.4612396500000004,
+    "usage": {
+      "input_tokens": 65,
+      "cache_creation_input_tokens": 47135,
+      "cache_read_input_tokens": 2942975,
+      "output_tokens": 19116,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 47135,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 65,
+        "outputTokens": 19116,
+        "cacheReadInputTokens": 2942975,
+        "cacheCreationInputTokens": 47135,
+        "webSearchRequests": 0,
+        "costUSD": 2.24430625,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 62589,
+        "outputTokens": 7788,
+        "cacheReadInputTokens": 595694,
+        "cacheCreationInputTokens": 44668,
+        "webSearchRequests": 0,
+        "costUSD": 0.21693339999999994,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "ab9d1f1c-e5cd-441c-bfbf-01278ec80006"
+  },
+  "session_id": "14fb6339-bd51-4d65-af09-686b4a88a14b",
+  "result_text": "The final implementation looks clean and complete. Let me summarize the changes made:\n\n## Summary of Changes\n\n### `astropy/io/ascii/rst.py`\n\n**Problem:** The `RST` class didn't accept the `header_rows` parameter that `FixedWidth` (its parent class) supports.\n\n**Changes:**\n\n1. **`SimpleRSTData`** - Removed hardcoded `start_line = 3`. The data start line now depends on how many header rows are present, so it's computed dynamically.\n\n2. **`RST.__init__()`** - Added `header_rows=None` parameter and passes it to the parent `FixedWidth.__init__()`.\n\n3. **`RST.write()`** - Changed the hardcoded `lines[1]` separator index to `lines[len(self.header.header_rows)]`. With a single header row, this is still index 1 (unchanged behavior). With two header rows, it's index 2, etc.\n\n4. **`RST.read()`** - Added new method that dynamically sets `data.start_line = 2 + len(self.header.header_rows)` before calling the parent's `read()`. This ensures reading also works correctly when `header_rows` has been customized.\n\n### `astropy/io/ascii/tests/test_rst.py`\n\nAdded `test_write_header_rows()` test that verifies a `QTable` with units can be written in RST format with `header_rows=[\"name\", \"unit\"]`.\n\n**Expected RST output with `header_rows=[\"name\", \"unit\"]`:**\n```\n===== ========\n wave response\n   nm       ct\n===== ========\n350.0      0.7\n950.0      1.2\n===== ========\n```",
+  "total_cost_usd": 2.4612396500000004,
+  "num_turns": 66
+}

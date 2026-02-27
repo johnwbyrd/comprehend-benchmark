@@ -1,0 +1,64 @@
+{
+  "config": "comprehend",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 241,
+  "git_diff": "diff --git a/lib/mpl_toolkits/axes_grid1/axes_grid.py b/lib/mpl_toolkits/axes_grid1/axes_grid.py\nindex 2b1b1d3200..830554edbb 100644\n--- a/lib/mpl_toolkits/axes_grid1/axes_grid.py\n+++ b/lib/mpl_toolkits/axes_grid1/axes_grid.py\n@@ -13,8 +13,13 @@ from .mpl_axes import Axes\n def _tick_only(ax, bottom_on, left_on):\n     bottom_off = not bottom_on\n     left_off = not left_on\n-    ax.axis[\"bottom\"].toggle(ticklabels=bottom_off, label=bottom_off)\n-    ax.axis[\"left\"].toggle(ticklabels=left_off, label=left_off)\n+    if hasattr(ax.axis, \"__getitem__\"):\n+        ax.axis[\"bottom\"].toggle(ticklabels=bottom_off, label=bottom_off)\n+        ax.axis[\"left\"].toggle(ticklabels=left_off, label=left_off)\n+    else:\n+        ax.tick_params(labelbottom=bottom_off, labelleft=left_off)\n+        ax.xaxis.label.set_visible(bottom_off)\n+        ax.yaxis.label.set_visible(left_off)\n \n \n class CbarAxesBase:\ndiff --git a/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py b/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py\nindex d1554020cd..2fd60dd8e3 100644\n--- a/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py\n+++ b/lib/mpl_toolkits/axes_grid1/tests/test_axes_grid1.py\n@@ -592,6 +592,17 @@ def test_axes_class_tuple():\n     gr = AxesGrid(fig, 111, nrows_ncols=(1, 1), axes_class=axes_class)\n \n \n+def test_axes_class_non_default():\n+    # Test that AxesGrid works with a non-default axes class whose .axis\n+    # attribute is a callable (method) rather than a subscriptable AxisDict.\n+    # Regression test for https://github.com/matplotlib/matplotlib/issues/XXXXX\n+    import matplotlib.axes\n+    fig = plt.figure()\n+    axes_class = (matplotlib.axes.Axes, {})\n+    # This should not raise \"TypeError: 'method' object is not subscriptable\"\n+    gr = AxesGrid(fig, 111, nrows_ncols=(2, 2), axes_class=axes_class)\n+\n+\n def test_grid_axes_lists():\n     \"\"\"Test Grid axes_all, axes_row and axes_column relationship.\"\"\"\n     fig = plt.figure()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 239033,
+    "duration_api_ms": 246750,
+    "num_turns": 40,
+    "result": "The fix is clean and minimal. Here's a summary of what was done:\n\n## Summary\n\n**Root cause:** `_tick_only()` in `axes_grid.py` unconditionally calls `ax.axis[\"bottom\"]` using subscript notation. This works only for `mpl_toolkits.axes_grid1.mpl_axes.Axes`, where `ax.axis` returns an `AxisDict` (a dict subclass). For other axes classes like cartopy's `GeoAxes` or plain `matplotlib.axes.Axes`, `ax.axis` is a regular bound method which doesn't support `[]` indexing \u2014 hence `TypeError: 'method' object is not subscriptable`.\n\n**Fix in `axes_grid.py:_tick_only()`:** Added a check `hasattr(ax.axis, \"__getitem__\")` to branch on the two cases:\n- **True** (has subscript access, i.e., `AxisDict`): use the existing `ax.axis[\"bottom\"].toggle(...)` approach\n- **False** (regular method): fall back to `ax.tick_params(labelbottom=..., labelleft=...)` and directly set axis label visibility via `ax.xaxis.label.set_visible()` / `ax.yaxis.label.set_visible()`\n\nAlso added a regression test `test_axes_class_non_default` that exercises `AxesGrid` with a non-default axes class (`matplotlib.axes.Axes`).",
+    "stop_reason": null,
+    "session_id": "a668aa0f-7c3e-49c0-9d05-a87ee444fdc6",
+    "total_cost_usd": 1.5546087500000003,
+    "usage": {
+      "input_tokens": 40,
+      "cache_creation_input_tokens": 39673,
+      "cache_read_input_tokens": 1775803,
+      "output_tokens": 14672,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 39673,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 40,
+        "outputTokens": 14672,
+        "cacheReadInputTokens": 1775803,
+        "cacheCreationInputTokens": 39673,
+        "webSearchRequests": 0,
+        "costUSD": 1.5028577500000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      },
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 41396,
+        "outputTokens": 2071,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.051751000000000005,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "0859977f-207d-4cd6-b0b3-3e6f8c7e234d"
+  },
+  "session_id": "a668aa0f-7c3e-49c0-9d05-a87ee444fdc6",
+  "result_text": "The fix is clean and minimal. Here's a summary of what was done:\n\n## Summary\n\n**Root cause:** `_tick_only()` in `axes_grid.py` unconditionally calls `ax.axis[\"bottom\"]` using subscript notation. This works only for `mpl_toolkits.axes_grid1.mpl_axes.Axes`, where `ax.axis` returns an `AxisDict` (a dict subclass). For other axes classes like cartopy's `GeoAxes` or plain `matplotlib.axes.Axes`, `ax.axis` is a regular bound method which doesn't support `[]` indexing \u2014 hence `TypeError: 'method' object is not subscriptable`.\n\n**Fix in `axes_grid.py:_tick_only()`:** Added a check `hasattr(ax.axis, \"__getitem__\")` to branch on the two cases:\n- **True** (has subscript access, i.e., `AxisDict`): use the existing `ax.axis[\"bottom\"].toggle(...)` approach\n- **False** (regular method): fall back to `ax.tick_params(labelbottom=..., labelleft=...)` and directly set axis label visibility via `ax.xaxis.label.set_visible()` / `ax.yaxis.label.set_visible()`\n\nAlso added a regression test `test_axes_class_non_default` that exercises `AxesGrid` with a non-default axes class (`matplotlib.axes.Axes`).",
+  "total_cost_usd": 1.5546087500000003,
+  "num_turns": 40
+}

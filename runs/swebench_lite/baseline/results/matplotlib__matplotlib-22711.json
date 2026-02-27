@@ -1,0 +1,54 @@
+{
+  "config": "baseline",
+  "repo_dir": "/tmp/swebench_iu299bow/matplotlib__matplotlib",
+  "wall_time_seconds": 54,
+  "git_diff": "diff --git a/lib/matplotlib/widgets.py b/lib/matplotlib/widgets.py\nindex da5b40a5ef..7ccea9c1eb 100644\n--- a/lib/matplotlib/widgets.py\n+++ b/lib/matplotlib/widgets.py\n@@ -897,20 +897,22 @@ class RangeSlider(SliderBase):\n         _api.check_shape((2,), val=val)\n         val[0] = self._min_in_bounds(val[0])\n         val[1] = self._max_in_bounds(val[1])\n-        xy = self.poly.xy\n         if self.orientation == \"vertical\":\n-            xy[0] = .25, val[0]\n-            xy[1] = .25, val[1]\n-            xy[2] = .75, val[1]\n-            xy[3] = .75, val[0]\n-            xy[4] = .25, val[0]\n+            self.poly.xy = np.array([\n+                [.25, val[0]],\n+                [.25, val[1]],\n+                [.75, val[1]],\n+                [.75, val[0]],\n+                [.25, val[0]],\n+            ])\n         else:\n-            xy[0] = val[0], .25\n-            xy[1] = val[0], .75\n-            xy[2] = val[1], .75\n-            xy[3] = val[1], .25\n-            xy[4] = val[0], .25\n-        self.poly.xy = xy\n+            self.poly.xy = np.array([\n+                [val[0], .25],\n+                [val[0], .75],\n+                [val[1], .75],\n+                [val[1], .25],\n+                [val[0], .25],\n+            ])\n         self.valtext.set_text(self._format(val))\n         if self.drawon:\n             self.ax.figure.canvas.draw_idle()\n",
+  "claude_output": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "duration_ms": 52380,
+    "duration_api_ms": 52037,
+    "num_turns": 7,
+    "result": "The fix is correct. Here's the root cause and solution:\n\n**Root cause:** When `valinit[0] == valinit[1]` (e.g., `[0.0, 0.0]`), `ax.axvspan(0.0, 0.0, ...)` creates a zero-width degenerate polygon with only **4 vertices** instead of 5. When `set_val` then tries to assign `xy[4]`, it gets an `IndexError` because index 4 is out of bounds for an array of size 4.\n\n**Fix:** Instead of reading `self.poly.xy` and modifying it in-place (which depends on the existing shape), we now construct a fresh `np.array` with all 5 vertices (the 5th closes the polygon back to the start) and assign it directly to `self.poly.xy`. This works regardless of how many vertices the polygon was initially created with.",
+    "stop_reason": null,
+    "session_id": "9e16ede9-e609-4b20-8e83-b07962689c31",
+    "total_cost_usd": 0.25560025,
+    "usage": {
+      "input_tokens": 9,
+      "cache_creation_input_tokens": 12241,
+      "cache_read_input_tokens": 182498,
+      "output_tokens": 3512,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12241,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-sonnet-4-6": {
+        "inputTokens": 9,
+        "outputTokens": 3512,
+        "cacheReadInputTokens": 182498,
+        "cacheCreationInputTokens": 12241,
+        "webSearchRequests": 0,
+        "costUSD": 0.25560025,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000
+      }
+    },
+    "permission_denials": [],
+    "uuid": "86f52e75-bafb-4b91-b868-8e4ca673f29f"
+  },
+  "session_id": "9e16ede9-e609-4b20-8e83-b07962689c31",
+  "result_text": "The fix is correct. Here's the root cause and solution:\n\n**Root cause:** When `valinit[0] == valinit[1]` (e.g., `[0.0, 0.0]`), `ax.axvspan(0.0, 0.0, ...)` creates a zero-width degenerate polygon with only **4 vertices** instead of 5. When `set_val` then tries to assign `xy[4]`, it gets an `IndexError` because index 4 is out of bounds for an array of size 4.\n\n**Fix:** Instead of reading `self.poly.xy` and modifying it in-place (which depends on the existing shape), we now construct a fresh `np.array` with all 5 vertices (the 5th closes the polygon back to the start) and assign it directly to `self.poly.xy`. This works regardless of how many vertices the polygon was initially created with.",
+  "total_cost_usd": 0.25560025,
+  "num_turns": 7
+}
