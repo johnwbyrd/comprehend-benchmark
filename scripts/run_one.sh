@@ -85,8 +85,9 @@ PROMPT=$(cat "$PROMPT_FILE")
 START_TIME=$(date +%s)
 
 CLAUDE_OUTPUT_FILE=$(mktemp)
+CLAUDE_STDERR_FILE=$(mktemp)
 GIT_DIFF_FILE=$(mktemp)
-trap 'rm -f "$CLAUDE_OUTPUT_FILE" "$GIT_DIFF_FILE"' EXIT
+trap 'rm -f "$CLAUDE_OUTPUT_FILE" "$CLAUDE_STDERR_FILE" "$GIT_DIFF_FILE"' EXIT
 
 cd "$REPO_DIR"
 
@@ -97,7 +98,14 @@ claude -p "$PROMPT" \
     --max-turns "$MAX_TURNS" \
     --model "$MODEL" \
     --append-system-prompt "$APPEND_PROMPT" \
-    > "$CLAUDE_OUTPUT_FILE" 2>/dev/null || true
+    > "$CLAUDE_OUTPUT_FILE" 2>"$CLAUDE_STDERR_FILE" || true
+
+# If claude produced no output, something went wrong — don't write a bogus result
+if [ ! -s "$CLAUDE_OUTPUT_FILE" ]; then
+    echo "ERROR: claude produced no output" >&2
+    echo "Stderr: $(cat "$CLAUDE_STDERR_FILE")" >&2
+    exit 1
+fi
 
 END_TIME=$(date +%s)
 WALL_TIME=$((END_TIME - START_TIME))
